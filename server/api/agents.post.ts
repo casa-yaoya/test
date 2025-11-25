@@ -1,6 +1,6 @@
 import type { AgentRequest, AgentResponse, AgentContext } from '~/types/agent'
 import { getAnthropicClient } from '../utils/anthropic'
-import { loadPrompt } from '../utils/prompt'
+import { loadPrompt, replacePromptVariables } from '../utils/prompt'
 
 export default defineEventHandler(async (event): Promise<AgentResponse> => {
   const body = await readBody<AgentRequest>(event)
@@ -55,7 +55,15 @@ async function processRoleplaySupportAgent(context: AgentContext): Promise<Agent
   const { userInput, files = [], currentDesign, prompt } = context
   const anthropic = getAnthropicClient()
 
-  const systemPrompt = prompt || await loadPrompt('roleplay-support-agent')
+  // 新しいプロンプト名を使用（後方互換性あり）
+  let systemPrompt = prompt || await loadPrompt('design-assistant')
+
+  // 変数を置換
+  systemPrompt = replacePromptVariables(systemPrompt, {
+    currentDesign: JSON.stringify(currentDesign, null, 2),
+    uploadedFiles: files.map(f => `- ${f.name}: ${f.summary || '要約なし'}`).join('\n'),
+    userMessage: userInput
+  })
 
   const userMessage = `
 ユーザー入力: ${userInput}
@@ -93,7 +101,14 @@ async function processScriptGenerationAgent(agent: string, context: AgentContext
   const mode = agent.split('-').pop() || ''
   const anthropic = getAnthropicClient()
 
-  const systemPrompt = prompt || await loadPrompt(`script-generation-${mode}`)
+  // 新しいプロンプト名を使用: script-subtitle, script-points, script-practice
+  let systemPrompt = prompt || await loadPrompt(`script-${mode}`)
+
+  // 変数を置換
+  systemPrompt = replacePromptVariables(systemPrompt, {
+    roleplayDesign: JSON.stringify(roleplayDesign, null, 2),
+    attachedFiles: files.map(f => `- ${f.name}: ${f.content || '内容なし'}`).join('\n')
+  })
 
   const userMessage = `
 ロープレ設計:
@@ -103,6 +118,7 @@ ${JSON.stringify(roleplayDesign, null, 2)}
 ${files.map(f => `- ${f.name}: ${f.content || '内容なし'}`).join('\n')}
 
 上記の情報を元に、${mode}モード用の台本を生成してください。
+JSON形式で出力してください。
   `
 
   const response = await anthropic.messages.create({
@@ -126,10 +142,29 @@ ${files.map(f => `- ${f.name}: ${f.content || '内容なし'}`).join('\n')}
 // System Prompt Agent
 async function processSystemPromptAgent(agent: string, context: AgentContext): Promise<AgentResponse> {
   const { roleplayDesign, script, files = [], prompt } = context
-  const mode = agent.split('-').pop() || ''
+  // モード名を取得: subtitle, aiDemo -> demo, confirmation, practice
+  const rawMode = agent.split('-').pop() || ''
+  const mode = rawMode === 'aiDemo' ? 'demo' : rawMode
   const anthropic = getAnthropicClient()
 
-  const systemPrompt = prompt || await loadPrompt(`system-prompt-${mode}-mode`)
+  // 新しいプロンプト名を使用: mode-subtitle, mode-demo, mode-confirmation, mode-practice
+  let systemPrompt = prompt || await loadPrompt(`mode-${mode}`)
+
+  // 変数を置換
+  systemPrompt = replacePromptVariables(systemPrompt, {
+    'roleplayDesign.situation': roleplayDesign?.situation || '',
+    'roleplayDesign.opponent': JSON.stringify(roleplayDesign?.opponent, null, 2) || '',
+    'roleplayDesign.playerSetting': JSON.stringify(roleplayDesign?.playerSetting, null, 2) || '',
+    generatedScript: script || '',
+    pointsList: JSON.stringify(roleplayDesign?.points, null, 2) || '',
+    learningTopic: roleplayDesign?.title || 'ロープレ学習',
+    playerRole: roleplayDesign?.playerRole || 'スタッフ',
+    opponentRole: roleplayDesign?.opponentRole || '顧客',
+    primaryGoals: JSON.stringify(roleplayDesign?.mission?.required, null, 2) || '',
+    primaryChallenges: JSON.stringify(roleplayDesign?.mission?.scoring, null, 2) || '',
+    secondaryChallenges: JSON.stringify(roleplayDesign?.mission?.failure, null, 2) || '',
+    firstLine: roleplayDesign?.firstLine || 'いらっしゃいませ。'
+  })
 
   const userMessage = `
 ロープレ設計:
@@ -142,6 +177,7 @@ ${script}
 ${files.map(f => `- ${f.name}: ${f.content || '内容なし'}`).join('\n')}
 
 上記の情報を元に、${mode}モード用のシステムプロンプトを生成してください。
+プレーンテキストで出力してください。
   `
 
   const response = await anthropic.messages.create({
@@ -157,7 +193,7 @@ ${files.map(f => `- ${f.name}: ${f.content || '内容なし'}`).join('\n')}
   const promptText = response.content[0].type === 'text' ? response.content[0].text : ''
 
   return {
-    mode,
+    mode: rawMode, // 元のモード名を返す（後方互換性）
     systemPrompt: promptText
   }
 }
@@ -167,7 +203,14 @@ async function processFeedbackAgent(context: AgentContext): Promise<AgentRespons
   const { roleplayDesign, conversationLog, mode, prompt } = context
   const anthropic = getAnthropicClient()
 
-  const systemPrompt = prompt || await loadPrompt('feedback-prompt')
+  // 新しいプロンプト名を使用
+  let systemPrompt = prompt || await loadPrompt('feedback')
+
+  // 変数を置換
+  systemPrompt = replacePromptVariables(systemPrompt, {
+    pointsList: JSON.stringify(roleplayDesign?.points, null, 2) || '',
+    conversationLog: conversationLog || ''
+  })
 
   const userMessage = `
 ロープレ設計のポイント:
@@ -179,6 +222,7 @@ ${JSON.stringify(roleplayDesign?.points, null, 2)}
 ${conversationLog}
 
 上記の会話を評価し、100点満点で採点してください。
+JSON形式で出力してください。
   `
 
   const response = await anthropic.messages.create({

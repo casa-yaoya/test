@@ -190,6 +190,55 @@ button, a {
   width: 100%;
 }
 
+.hierarchy-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.filter-select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+}
+
+.filter-select:disabled {
+  background: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.filter-select[multiple] {
+  min-height: 100px;
+}
+
+.filter-hint {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 0.25rem;
+}
+
+.filter-clear-button {
+  width: 100%;
+  padding: 0.5rem 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  background: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 150ms;
+  color: #6b7280;
+}
+
+.filter-clear-button:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
 /* Data Table Styles */
 .data-table {
   width: 100%;
@@ -214,6 +263,34 @@ button, a {
 
 .data-table tbody tr:hover {
   background: #f9fafb;
+}
+
+/* Sortable Table Headers */
+.data-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: background 150ms;
+}
+
+.data-table th.sortable:hover {
+  background: #f3f4f6;
+}
+
+.data-table th.sortable .sort-icon {
+  margin-left: 0.5rem;
+  font-size: 0.75rem;
+  opacity: 0.5;
+}
+
+.data-table th.sortable.sorted .sort-icon {
+  opacity: 1;
+  color: #3b82f6;
+}
+
+.data-table th.sortable .th-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 /* Select Input */
@@ -289,6 +366,19 @@ button, a {
 .upload-status {
   margin-top: 0.75rem;
   font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  text-align: center;
+}
+
+.upload-status.success {
+  background-color: #ecfdf5;
+  color: #059669;
+}
+
+.upload-status.error {
+  background-color: #fef2f2;
+  color: #dc2626;
 }
 
 /* Buttons */
@@ -379,12 +469,27 @@ button, a {
   border-radius: 8px;
   border: 1px solid #e5e7eb;
   overflow: hidden;
+  position: relative;
 }
 
 .cc-category-selector {
   padding: 12px 16px;
   background: white;
   border-bottom: 2px solid #e5e7eb;
+}
+
+.cc-category-select-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.cc-category-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
 }
 
 .cc-category-select {
@@ -593,7 +698,7 @@ button, a {
   justify-content: center;
   padding: 60px 20px;
   border: 2px dashed #d1d5db;
-  border-radius: 8px;
+  border-radius: 12px;
   background: #f9fafb;
   text-align: center;
   color: #6b7280;
@@ -1485,8 +1590,8 @@ button, a {
 }
 
 .cc-avatar-logo {
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
 }
 
 /* Chat input disabled state */
@@ -1498,4 +1603,430 @@ button, a {
 .cc-button-primary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Player Detail Styles */
+.player-detail-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.player-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.back-button {
+  padding: 0.5rem 1rem;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: #374151;
+  transition: all 0.15s;
+}
+
+.back-button:hover {
+  background: #e5e7eb;
+}
+
+.player-detail-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.player-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.player-info-card {
+  background: white;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+  text-align: center;
+}
+
+.player-info-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+}
+
+.player-info-value {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.player-info-value.highlight {
+  color: #3b82f6;
+}
+
+.player-info-value-sm {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+/* Clickable table row */
+.clickable-row {
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.clickable-row:hover {
+  background-color: #f0f7ff;
+}
+
+.player-name-cell {
+  color: #3b82f6;
+  font-weight: 500;
+}
+
+.clickable-row:hover .player-name-cell {
+  text-decoration: underline;
+}
+
+/* ============================ */
+/* Roleplay Design Styles */
+/* ============================ */
+.cc-roleplay-design-container {
+  padding: 16px;
+  width: 100%;
+}
+
+.cc-design-section {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  border: 1px solid #e5e7eb;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.cc-design-section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.cc-design-section-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: #3b82f6;
+  color: white;
+  border-radius: 50%;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.cc-design-section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.cc-design-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 12px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  line-height: 1.6;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.cc-design-textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+/* Mission Container */
+.cc-mission-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.cc-mission-category {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 16px;
+}
+
+.cc-mission-category-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.cc-mission-badge {
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
+}
+
+.cc-mission-required .cc-mission-badge {
+  background: #ef4444;
+}
+
+.cc-mission-scoring .cc-mission-badge {
+  background: #f59e0b;
+}
+
+.cc-mission-failure .cc-mission-badge {
+  background: #6b7280;
+}
+
+.cc-mission-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.cc-mission-item {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.cc-mission-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.cc-mission-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.cc-mission-remove {
+  width: 28px;
+  height: 28px;
+  background: #f3f4f6;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 18px;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cc-mission-remove:hover {
+  background: #e5e7eb;
+  color: #1f2937;
+}
+
+.cc-mission-add {
+  padding: 8px 16px;
+  background: #f3f4f6;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #374151;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.cc-mission-add:hover {
+  background: #e5e7eb;
+}
+
+/* Points Container */
+.cc-points-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.cc-point-item {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 20px;
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.cc-point-question,
+.cc-point-criteria,
+.cc-point-example {
+  margin-bottom: 16px;
+}
+
+.cc-point-question:last-of-type,
+.cc-point-criteria:last-of-type,
+.cc-point-example:last-of-type {
+  margin-bottom: 0;
+}
+
+.cc-point-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.cc-point-textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: inherit;
+  line-height: 1.6;
+  background: white;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.cc-point-textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.cc-point-remove {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  padding: 6px 12px;
+  background: #e5e7eb;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #374151;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.cc-point-remove:hover {
+  background: #d1d5db;
+}
+
+.cc-point-add {
+  padding: 10px 20px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.cc-point-add:hover {
+  background: #2563eb;
+}
+
+/* ============================ */
+/* Drag and Drop Overlay */
+/* ============================ */
+.cc-drag-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(59, 130, 246, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  border-radius: 8px;
+}
+
+.cc-drag-overlay-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  color: white;
+}
+
+.cc-drag-icon {
+  font-size: 64px;
+  animation: dragBounce 1s ease-in-out infinite;
+}
+
+@keyframes dragBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.cc-drag-text {
+  font-size: 24px;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* ============================ */
+/* File Message Styles */
+/* ============================ */
+.cc-file-message {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cc-file-icon {
+  font-size: 24px;
+}
+
+.cc-file-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cc-file-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: #1f2937;
+}
+
+.cc-file-size {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* File Type Selection Buttons */
+.cc-file-type-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+  margin-bottom: 12px;
 }

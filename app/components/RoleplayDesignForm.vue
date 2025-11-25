@@ -192,3 +192,242 @@ const removePoint = (index: number) => {
 // データをグローバルに公開（他のコンポーネントからアクセス可能にする）
 defineExpose({ design })
 </script>
+
+<style scoped>
+/* ロープレ設計コンテナ */
+.cc-roleplay-design-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* 設計セクション */
+.cc-design-section {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.cc-design-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.cc-design-section-number {
+  width: 24px;
+  height: 24px;
+  background: #3b82f6;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.cc-design-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.cc-design-textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 14px;
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.cc-design-textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* ミッションコンテナ */
+.cc-mission-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cc-mission-category {
+  background: #f9fafb;
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.cc-mission-category-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: #374151;
+}
+
+.cc-mission-badge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: white;
+}
+
+.cc-mission-required .cc-mission-badge {
+  background: #ef4444;
+}
+
+.cc-mission-scoring .cc-mission-badge {
+  background: #f59e0b;
+}
+
+.cc-mission-failure .cc-mission-badge {
+  background: #6b7280;
+}
+
+.cc-mission-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cc-mission-item {
+  display: flex;
+  gap: 8px;
+}
+
+.cc-mission-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.cc-mission-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.cc-mission-remove {
+  width: 28px;
+  height: 28px;
+  background: #fee2e2;
+  color: #dc2626;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.cc-mission-remove:hover {
+  background: #fecaca;
+}
+
+.cc-mission-add {
+  margin-top: 8px;
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px dashed #d1d5db;
+  border-radius: 4px;
+  color: #6b7280;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.cc-mission-add:hover {
+  background: white;
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+/* ポイントコンテナ */
+.cc-points-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cc-point-item {
+  background: #f9fafb;
+  border-radius: 6px;
+  padding: 16px;
+  position: relative;
+}
+
+.cc-point-question,
+.cc-point-criteria,
+.cc-point-example {
+  margin-bottom: 12px;
+}
+
+.cc-point-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.cc-point-textarea {
+  width: 100%;
+  min-height: 60px;
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  font-size: 13px;
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.cc-point-textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.cc-point-remove {
+  padding: 4px 8px;
+  background: #fee2e2;
+  color: #dc2626;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.cc-point-remove:hover {
+  background: #fecaca;
+}
+
+.cc-point-add {
+  padding: 10px 16px;
+  background: transparent;
+  border: 1px dashed #d1d5db;
+  border-radius: 6px;
+  color: #6b7280;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+
+.cc-point-add:hover {
+  background: white;
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+</style>

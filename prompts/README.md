@@ -1,100 +1,165 @@
-# ナレトレ プロンプト設計書
+# なれトレ プロンプト管理
 
-このディレクトリには、ナレトレ管理ページで使用する各種AIエージェントのプロンプト設計書が含まれています。
+このディレクトリには、なれトレで使用するAIプロンプトが含まれています。
+Claude API、OpenAI API 両方で使用できる汎用的な形式で管理しています。
+
+## ディレクトリ構成
+
+```
+prompts/
+├── README.md                    # このファイル
+├── chat/                        # チャット系プロンプト
+│   ├── design-assistant.md      # ロープレ設計支援
+│   └── file-upload-handler.md   # ファイルアップロード対応
+├── generation/                  # 生成系プロンプト（台本生成）
+│   ├── script-subtitle.md       # 台本モード用台本
+│   ├── script-points.md         # ポイントモード用台本
+│   └── script-practice.md       # 実践モード用台本
+├── runtime/                     # 実行時プロンプト（音声会話用）
+│   ├── mode-subtitle.md         # 台本モード
+│   ├── mode-demo.md             # お手本モード
+│   ├── mode-confirmation.md     # 確認モード
+│   └── mode-practice.md         # 実践モード
+└── evaluation/                  # 評価系プロンプト
+    └── feedback.md              # フィードバック生成
+```
+
+## プロンプト一覧
+
+### 1. チャット系（chat/）
+
+| ファイル | 用途 | 使用場面 |
+|----------|------|----------|
+| `design-assistant.md` | ロープレ設計の対話支援 | チャットでのやり取り |
+| `file-upload-handler.md` | ファイルタイプの確認 | ファイルアップロード時 |
+
+### 2. 生成系（generation/）
+
+| ファイル | 用途 | 使用場面 |
+|----------|------|----------|
+| `script-subtitle.md` | 字幕モード用台本生成 | ロープレ生成ボタン |
+| `script-points.md` | ポイントモード用台本生成 | ロープレ生成ボタン |
+| `script-practice.md` | 実践モード用台本生成 | ロープレ生成ボタン |
+
+### 3. 実行時（runtime/）
+
+| ファイル | 用途 | 使用場面 |
+|----------|------|----------|
+| `mode-subtitle.md` | 台本チェック先生役 | 音声会話実行時 |
+| `mode-demo.md` | お手本実演先生役 | 音声会話実行時 |
+| `mode-confirmation.md` | 理解度確認先生役 | 音声会話実行時 |
+| `mode-practice.md` | 難しい顧客役 | 音声会話実行時 |
+
+### 4. 評価系（evaluation/）
+
+| ファイル | 用途 | 使用場面 |
+|----------|------|----------|
+| `feedback.md` | 100点満点評価 | ロープレ終了後 |
+
+## 各モードの説明
+
+### 台本モード（Subtitle）
+- **目的**: AIがお手本の会話を実演
+- **ユーザー**: 聞くだけで学習
+- **AI動作**: 台本通りに話せているかをチェック
+
+### お手本モード（Demo）
+- **目的**: AIが先生役として模範を実演
+- **ユーザー**: 顧客役を演じる
+- **AI動作**: 質問の仕方のお手本を見せる
+
+### 確認モード（Confirmation）
+- **目的**: ユーザーの理解度を確認
+- **ユーザー**: 先生の質問に答える
+- **AI動作**: Q&A形式で理解度をチェック
+
+### 実践モード（Practice）
+- **目的**: 本番に近い難しい状況での練習
+- **ユーザー**: スタッフ役として対応
+- **AI動作**: 難しい顧客役として振る舞う
+
+## プロンプトのフォーマット
+
+各プロンプトファイルは以下の構造で記述されています：
+
+```markdown
+# タイトル
 
 ## 概要
+プロンプトの目的と役割
 
-ナレトレシステムは、Claude Code APIを使用して複数のエージェントを連携させ、ロープレ学習コンテンツの生成と実行を自動化します。
+## 使用場面
+いつ、どこで使用されるか
 
-## エージェント構成
+## 入力パラメータ
+- `paramName`: 説明
 
-### 1. ロープレ構築支援エージェント
-**ファイル**: `roleplay-support-agent.md`
+## プロンプト
+実際のプロンプトテンプレート（{{変数名}} 形式）
 
-**役割**: チャットエリアでユーザーとコミュニケーションを行い、ロープレ内容を設計する。
+## 出力形式
+期待される出力のフォーマット
+```
 
-**使用タイミング**:
-- ファイルアップロード時
-- テキスト入力時
+## 変数の置換
 
-**出力**: ロープレ設計（シチュエーション、相手の設定、ミッション、ポイント）
+プロンプト内の `{{変数名}}` は実行時に実際の値に置換されます。
 
----
+主な変数：
+- `{{roleplayDesign}}` - ロープレ設計全体
+- `{{generatedScript}}` - 生成された台本
+- `{{conversationLog}}` - 会話ログ
+- `{{pointsList}}` - ポイントのリスト
+- `{{userMessage}}` - ユーザーの入力
 
-### 2. 台本生成エージェント群
+## API別の使用方法
 
-#### 2-1. 台本モード用
-**ファイル**: `script-generation-subtitle.md`
+### Claude API
 
-お手本の流れを学ぶための台本を生成。
+```javascript
+const response = await anthropic.messages.create({
+  model: "claude-sonnet-4-5-20250514",
+  max_tokens: 4096,
+  system: promptTemplate.replace('{{変数}}', 実際の値),
+  messages: [{ role: "user", content: userInput }]
+});
+```
 
-#### 2-2. ポイントモード用（お手本モード）
-**ファイル**: `script-generation-points.md`
+### OpenAI API
 
-先生とプレイヤーの問答形式の台本を生成。
+```javascript
+const response = await openai.chat.completions.create({
+  model: "gpt-4",
+  messages: [
+    { role: "system", content: promptTemplate.replace('{{変数}}', 実際の値) },
+    { role: "user", content: userInput }
+  ]
+});
+```
 
-#### 2-3. 実践モード用
-**ファイル**: `script-generation-practice.md`
+### OpenAI Realtime API
 
-難易度の高いリアルな会話の台本を生成。
-
-**共通の使用タイミング**: 「ロープレ生成」ボタンクリック時
-
----
-
-### 3. 設計書生成エージェント群
-
-各モード用のOpenAI Realtime API用システムプロンプトを生成します。
-
-#### 3-1. 台本モード用
-**ファイル**: `system-prompt-subtitle-mode.md`
-
-台本通りに話せているかをチェックするAIの動作を定義。
-
-#### 3-2. お手本モード用
-**ファイル**: `system-prompt-aiDemo-mode.md`
-
-優秀な先輩役として模範的な営業を実演するAIの動作を定義。
-
-#### 3-3. 確認モード用
-**ファイル**: `system-prompt-confirmation-mode.md`
-
-ポイント理解度を確認する先生役AIの動作を定義。
-
-#### 3-4. 実践モード用
-**ファイル**: `system-prompt-practice-mode.md`
-
-難しいお客さん役として、プレイヤーを試すAIの動作を定義。
-
-**共通の使用タイミング**: 台本生成後
-
----
-
-### 4. フィードバックエージェント
-**ファイル**: `feedback-prompt.md`
-
-**役割**: ロープレ終了後、会話ログを分析して100点満点で評価する。
-
-**使用タイミング**: ロープレ完了時
-
-**出力**: 採点結果、詳細評価、改善点のフィードバック
-
----
+```javascript
+const session = await openai.realtime.sessions.create({
+  model: "gpt-4o-realtime-preview",
+  instructions: runtimePrompt.replace('{{変数}}', 実際の値)
+});
+```
 
 ## データフロー
 
 ```
 ユーザー入力/ファイル
     ↓
-[1] ロープレ構築支援エージェント
+[1] chat/design-assistant.md
     ↓ (ロープレ設計)
-[2] 台本生成エージェント（4種）
+[2] generation/script-*.md（3種類並列）
     ↓ (台本データ)
-[3] 設計書生成エージェント（4種）
+[3] runtime/mode-*.md（4種類並列）
     ↓ (システムプロンプト)
-実際のロープレ実行 (OpenAI Realtime API)
+実際のロープレ実行（音声会話API）
     ↓ (会話ログ)
-[4] フィードバックエージェント
+[4] evaluation/feedback.md
     ↓
 結果表示
 ```
@@ -124,35 +189,22 @@ Q&A形式で学習内容を定義
 （正答例）具体的な回答例
 ```
 
-## 実装状況
+## 旧ファイル名との対応表
 
-### 完了
-- ✅ プレイエリアUI修正（相手アイコンポップアップ化、映像設定非表示）
-- ✅ ログアウト機能実装
-- ✅ ログイン画面実装
-- ✅ 全エージェントのプロンプト設計書作成
-
-### 今後の実装（未完了）
-- ⏳ ロープレ設計フォーマットの変更適用
-- ⏳ 各エージェントのコード統合
-- ⏳ Claude Code API連携実装
-- ⏳ エージェント間のデータ受け渡し実装
-
-## 技術スタック
-
-- **フロントエンド**: HTML, CSS, JavaScript
-- **AI API**:
-  - Claude Code API（エージェント制御）
-  - OpenAI Realtime API（音声会話）
-- **バックエンド**: Node.js (server.js)
-
-## 注意事項
-
-1. **API認証**: Claude Code APIキーとOpenAI APIキーが必要
-2. **モード別プロンプト**: 各モードで異なるプロンプトが必要
-3. **データ保存**: 生成されたプロンプトと台本はDBまたはファイルに保存
-4. **エラーハンドリング**: AI生成失敗時の適切なフォールバック処理が必要
+| 旧ファイル名 | 新ファイル名 |
+|-------------|-------------|
+| `roleplay-chat.txt` | `chat/file-upload-handler.md` |
+| `roleplay-support-agent.md` | `chat/design-assistant.md` |
+| `script-generation-subtitle.md` | `generation/script-subtitle.md` |
+| `script-generation-points.md` | `generation/script-points.md` |
+| `script-generation-practice.md` | `generation/script-practice.md` |
+| `system-prompt-subtitle-mode.md` | `runtime/mode-subtitle.md` |
+| `system-prompt-aiDemo-mode.md` | `runtime/mode-demo.md` |
+| `system-prompt-confirmation-mode.md` | `runtime/mode-confirmation.md` |
+| `system-prompt-practice-mode.md` | `runtime/mode-practice.md` |
+| `feedback-prompt.md` | `evaluation/feedback.md` |
 
 ## 更新履歴
 
+- 2025-11-25: プロンプト構成を汎用的な形式に再構成
 - 2025-11-24: 初版作成、全プロンプト設計書完成

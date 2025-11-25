@@ -27,6 +27,11 @@
           <p class="upload-text">アップロード中...</p>
         </div>
 
+        <div v-else-if="isAnalyzing" class="upload-progress">
+          <div class="spinner analyzing"></div>
+          <p class="upload-text">{{ analysisProgress?.status || 'ファイル解析中...' }}</p>
+        </div>
+
         <div v-else class="upload-prompt">
           <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -62,48 +67,88 @@
           v-for="file in uploadedFiles"
           :key="file.id"
           class="file-card"
+          :class="{ 'expanded': expandedFileId === file.id }"
         >
-          <div class="file-icon">
-            <svg v-if="file.type.includes('pdf')" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18.5,9H13V3.5L18.5,9Z"/>
-            </svg>
-            <svg v-else-if="file.type.includes('sheet') || file.type.includes('excel')" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18.5,9H13V3.5L18.5,9M7,11H9V13H7V11M15,11H17V13H15V11M11,11H13V13H11V11M7,15H9V17H7V15M15,15H17V17H15V15M11,15H13V17H11V15Z"/>
-            </svg>
-            <svg v-else-if="file.type.includes('audio')" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M14,3.23V5.29C16.89,6.15 19,8.83 19,12C19,15.17 16.89,17.84 14,18.7V20.77C18,19.86 21,16.28 21,12C21,7.72 18,4.14 14,3.23M16.5,12C16.5,10.23 15.5,8.71 14,7.97V16C15.5,15.29 16.5,13.76 16.5,12M3,9V15H7L12,20V4L7,9H3Z"/>
-            </svg>
-            <svg v-else-if="file.type.includes('video')" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M17,10.5V7A1,1 0 0,0 16,6H4A1,1 0 0,0 3,7V17A1,1 0 0,0 4,18H16A1,1 0 0,0 17,17V13.5L21,17.5V6.5L17,10.5Z"/>
-            </svg>
-            <svg v-else viewBox="0 0 24 24" fill="currentColor">
-              <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18.5,9H13V3.5L18.5,9Z"/>
-            </svg>
+          <div class="file-card-header" @click.stop="toggleFileExpand(file.id)">
+            <div class="file-icon">
+              <svg v-if="file.type.includes('pdf')" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18.5,9H13V3.5L18.5,9Z"/>
+              </svg>
+              <svg v-else-if="file.type.includes('sheet') || file.type.includes('excel')" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18.5,9H13V3.5L18.5,9M7,11H9V13H7V11M15,11H17V13H15V11M11,11H13V13H11V11M7,15H9V17H7V15M15,15H17V17H15V15M11,15H13V17H11V15Z"/>
+              </svg>
+              <svg v-else-if="file.type.includes('audio')" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M14,3.23V5.29C16.89,6.15 19,8.83 19,12C19,15.17 16.89,17.84 14,18.7V20.77C18,19.86 21,16.28 21,12C21,7.72 18,4.14 14,3.23M16.5,12C16.5,10.23 15.5,8.71 14,7.97V16C15.5,15.29 16.5,13.76 16.5,12M3,9V15H7L12,20V4L7,9H3Z"/>
+              </svg>
+              <svg v-else-if="file.type.includes('video')" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17,10.5V7A1,1 0 0,0 16,6H4A1,1 0 0,0 3,7V17A1,1 0 0,0 4,18H16A1,1 0 0,0 17,17V13.5L21,17.5V6.5L17,10.5Z"/>
+              </svg>
+              <svg v-else viewBox="0 0 24 24" fill="currentColor">
+                <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18.5,9H13V3.5L18.5,9Z"/>
+              </svg>
+            </div>
+
+            <div class="file-info">
+              <p class="file-name">{{ file.name }}</p>
+              <p class="file-meta">
+                <span class="file-size">{{ formatFileSize(file.size) }}</span>
+                <span class="file-type-badge" :class="`badge-${file.dataType}`">
+                  {{ getDataTypeLabel(file.dataType) }}
+                </span>
+                <span v-if="isFileAnalyzing(file.id)" class="analyzing-badge">
+                  <span class="mini-spinner"></span>
+                  解析中
+                </span>
+                <span v-else-if="file.extractedText && !file.extractedText.startsWith('[')" class="analyzed-badge">
+                  解析済み
+                </span>
+              </p>
+              <p v-if="file.extractedText && !file.extractedText.startsWith('[')" class="file-preview">
+                {{ file.extractedText.substring(0, 100) }}{{ file.extractedText.length > 100 ? '...' : '' }}
+              </p>
+            </div>
+
+            <div class="file-card-actions">
+              <button
+                v-if="file.extractedText && !file.extractedText.startsWith('[')"
+                class="expand-btn"
+                :class="{ 'rotated': expandedFileId === file.id }"
+                @click.stop="toggleFileExpand(file.id)"
+                aria-label="詳細"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
+              <button
+                class="file-remove-btn"
+                @click.stop="removeFile(file.id)"
+                aria-label="削除"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
           </div>
 
-          <div class="file-info">
-            <p class="file-name">{{ file.name }}</p>
-            <p class="file-meta">
-              <span class="file-size">{{ formatFileSize(file.size) }}</span>
-              <span class="file-type-badge" :class="`badge-${file.dataType}`">
-                {{ getDataTypeLabel(file.dataType) }}
-              </span>
-            </p>
-            <p v-if="file.extractedText" class="file-preview">
-              {{ file.extractedText.substring(0, 100) }}{{ file.extractedText.length > 100 ? '...' : '' }}
-            </p>
+          <!-- Expanded content with extracted text -->
+          <div v-if="expandedFileId === file.id && file.extractedText" class="file-expanded-content">
+            <div class="extracted-text-header">
+              <span class="extracted-text-label">抽出テキスト</span>
+              <button class="copy-btn" @click.stop="copyText(file.extractedText)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                コピー
+              </button>
+            </div>
+            <div class="extracted-text-content">
+              <pre>{{ file.extractedText }}</pre>
+            </div>
           </div>
-
-          <button
-            class="file-remove-btn"
-            @click="removeFile(file.id)"
-            aria-label="削除"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
         </div>
       </div>
     </div>
@@ -114,7 +159,9 @@
 const {
   uploadedFiles,
   isUploading,
+  isAnalyzing,
   uploadError,
+  analysisProgress,
   uploadFiles,
   removeFile,
   formatFileSize
@@ -122,6 +169,7 @@ const {
 
 const fileInput = ref<HTMLInputElement | null>(null)
 const isDragging = ref(false)
+const expandedFileId = ref<string | null>(null)
 
 const props = defineProps<{
   dataType?: 'textbook' | 'roleplay' | 'other'
@@ -156,6 +204,26 @@ const getDataTypeLabel = (dataType: string) => {
     'other': 'その他'
   }
   return labels[dataType] || dataType
+}
+
+const toggleFileExpand = (fileId: string) => {
+  if (expandedFileId.value === fileId) {
+    expandedFileId.value = null
+  } else {
+    expandedFileId.value = fileId
+  }
+}
+
+const isFileAnalyzing = (fileId: string) => {
+  return isAnalyzing.value && analysisProgress.value?.fileId === fileId
+}
+
+const copyText = async (text: string) => {
+  try {
+    await navigator.clipboard.writeText(text)
+  } catch (error) {
+    console.error('Failed to copy text:', error)
+  }
 }
 </script>
 
@@ -285,18 +353,35 @@ const getDataTypeLabel = (dataType: string) => {
 
 .file-card {
   display: flex;
-  gap: 1rem;
-  padding: 1rem;
+  flex-direction: column;
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 0.5rem;
   position: relative;
   transition: all 0.2s;
+  overflow: hidden;
 }
 
 .file-card:hover {
   border-color: #d1d5db;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.file-card.expanded {
+  border-color: #3b82f6;
+}
+
+.file-card-header {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  cursor: pointer;
+}
+
+.file-card-actions {
+  display: flex;
+  gap: 0.25rem;
+  align-items: flex-start;
 }
 
 .file-icon {
@@ -372,9 +457,6 @@ const getDataTypeLabel = (dataType: string) => {
 }
 
 .file-remove-btn {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
   width: 24px;
   height: 24px;
   padding: 0;
@@ -387,6 +469,7 @@ const getDataTypeLabel = (dataType: string) => {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .file-remove-btn:hover {
@@ -398,6 +481,129 @@ const getDataTypeLabel = (dataType: string) => {
 .file-remove-btn svg {
   width: 14px;
   height: 14px;
+}
+
+.expand-btn {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.25rem;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.expand-btn:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.expand-btn.rotated {
+  transform: rotate(180deg);
+}
+
+.expand-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.analyzing-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 11px;
+  font-weight: 500;
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.analyzed-badge {
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 11px;
+  font-weight: 500;
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.mini-spinner {
+  width: 10px;
+  height: 10px;
+  border: 2px solid #fde68a;
+  border-top-color: #92400e;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.spinner.analyzing {
+  border-top-color: #f59e0b;
+}
+
+.file-expanded-content {
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.extracted-text-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.extracted-text-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 0.25rem;
+  font-size: 11px;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.copy-btn:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.copy-btn svg {
+  width: 12px;
+  height: 12px;
+}
+
+.extracted-text-content {
+  padding: 1rem;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.extracted-text-content pre {
+  margin: 0;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #374151;
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }
 
 .hidden {

@@ -6,6 +6,12 @@ export interface ChatMessage {
   role: 'user' | 'assistant' | 'system'
   content: string
   timestamp: Date
+  type?: 'text' | 'file'
+  file?: {
+    name: string
+    size: number
+    type: string
+  }
 }
 
 export interface ChatSuggestion {
@@ -30,13 +36,19 @@ export const useChatAI = () => {
   ]
 
   // Add a message to the chat
-  const addMessage = (role: ChatMessage['role'], content: string): string => {
-    const id = `msg-${Date.now()}`
+  const addMessage = (
+    role: ChatMessage['role'],
+    content: string,
+    options?: { type?: 'text' | 'file'; file?: { name: string; size: number; type: string } }
+  ): string => {
+    const id = `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     messages.value.push({
       id,
       role,
       content,
-      timestamp: new Date()
+      timestamp: new Date(),
+      type: options?.type || 'text',
+      file: options?.file
     })
     return id
   }

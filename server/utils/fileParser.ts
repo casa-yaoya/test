@@ -1,28 +1,20 @@
 // File parsing utilities for different file types
 import { read, utils } from 'xlsx'
+import JSZip from 'jszip'
 import type { FileParseResult } from '~/types/file'
 
 /**
- * Parse PDF file and extract text
+ * Parse PDF file - returns placeholder (actual text extraction done via AI)
+ * PDFの解析はAI（GPT-4 Vision等）で行うため、ここではメタデータのみを返す
  */
-export async function parsePDF(buffer: Buffer): Promise<FileParseResult> {
-  try {
-    // Dynamic import for pdf-parse (CommonJS module)
-    const pdfParse = await import('pdf-parse').then(m => m.default || m)
-    const data = await pdfParse(buffer)
-    return {
-      success: true,
-      text: data.text,
-      metadata: {
-        pageCount: data.numpages,
-        info: data.info
-      }
-    }
-  } catch (error) {
-    return {
-      success: false,
-      text: '',
-      error: error instanceof Error ? error.message : 'PDF parsing failed'
+export async function parsePDF(buffer: Buffer, filename: string): Promise<FileParseResult> {
+  // PDFはサイズ情報のみ記録し、実際のテキスト抽出はAI処理時に行う
+  return {
+    success: true,
+    text: `[PDF FILE: ${filename}] (${Math.round(buffer.length / 1024)} KB)`,
+    metadata: {
+      type: 'pdf',
+      size: buffer.length
     }
   }
 }
@@ -61,6 +53,58 @@ export function parseExcel(buffer: Buffer): FileParseResult {
 }
 
 /**
+ * Parse PowerPoint file and extract text from all slides
+ * PPTXファイルからスライドのテキストを抽出
+ * 処理ID: FILE-003
+ */
+export async function parsePowerPoint(buffer: Buffer): Promise<FileParseResult> {
+  try {
+    const zip = await JSZip.loadAsync(buffer)
+    let extractedText = ''
+    const slides: string[] = []
+
+    // スライドファイルを取得 (ppt/slides/slide1.xml, slide2.xml, ...)
+    const slideFiles = Object.keys(zip.files)
+      .filter(name => name.match(/ppt\/slides\/slide\d+\.xml$/))
+      .sort((a, b) => {
+        const numA = parseInt(a.match(/slide(\d+)\.xml$/)?.[1] || '0')
+        const numB = parseInt(b.match(/slide(\d+)\.xml$/)?.[1] || '0')
+        return numA - numB
+      })
+
+    for (const slidePath of slideFiles) {
+      const slideNum = slidePath.match(/slide(\d+)\.xml$/)?.[1] || '0'
+      const file = zip.files[slidePath]
+      const content = await file.async('text')
+
+      // <a:t>タグからテキストを抽出
+      const textMatches = content.match(/<a:t>([^<]*)<\/a:t>/g) || []
+      const texts = textMatches.map(match => match.replace(/<\/?a:t>/g, '').trim()).filter(t => t)
+
+      if (texts.length > 0) {
+        slides.push(`Slide ${slideNum}`)
+        extractedText += `\n[Slide ${slideNum}]\n${texts.join('\n')}\n`
+      }
+    }
+
+    return {
+      success: true,
+      text: extractedText.trim() || '(テキストが抽出できませんでした)',
+      metadata: {
+        slides,
+        slideCount: slideFiles.length
+      }
+    }
+  } catch (error) {
+    return {
+      success: false,
+      text: '',
+      error: error instanceof Error ? error.message : 'PowerPoint parsing failed'
+    }
+  }
+}
+
+/**
  * Parse text-based files (txt, csv, etc.)
  */
 export function parseText(buffer: Buffer): FileParseResult {
@@ -91,7 +135,7 @@ export async function parseFile(
 
   // PDF files
   if (mimeType === 'application/pdf' || extension === 'pdf') {
-    return await parsePDF(buffer)
+    return await parsePDF(buffer, filename)
   }
 
   // Excel files
@@ -101,6 +145,15 @@ export async function parseFile(
     ['xlsx', 'xls'].includes(extension)
   ) {
     return parseExcel(buffer)
+  }
+
+  // PowerPoint files
+  if (
+    mimeType === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' ||
+    mimeType === 'application/vnd.ms-powerpoint' ||
+    ['pptx', 'ppt'].includes(extension)
+  ) {
+    return await parsePowerPoint(buffer)
   }
 
   // Text-based files

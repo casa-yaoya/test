@@ -3,10 +3,31 @@ import type { RoleplayDesign } from '~/types/roleplay'
 import type { UploadedFile } from '~/types/file'
 import type { AgentRequest, AgentResponse } from '~/types/agent'
 
+// プロンプトカテゴリの型定義
+type PromptCategory = 'chat' | 'generation' | 'runtime' | 'evaluation'
+
 export const useAgentOrchestrator = () => {
   const isGenerating = ref(false)
   const currentStep = ref('')
   const error = ref<string | null>(null)
+
+  /**
+   * プロンプトを取得する
+   * @param category プロンプトカテゴリ
+   * @param name プロンプト名
+   * @param variables 変数（オプション）
+   */
+  async function getPrompt(
+    category: PromptCategory,
+    name: string,
+    variables?: Record<string, string>
+  ): Promise<string> {
+    const query = variables ? new URLSearchParams(variables).toString() : ''
+    const url = `/api/prompts/${category}/${name}${query ? `?${query}` : ''}`
+
+    const response = await $fetch<{ prompt: string }>(url)
+    return response.prompt
+  }
 
   /**
    * Generate complete roleplay including scripts and system prompts
@@ -31,63 +52,57 @@ export const useAgentOrchestrator = () => {
     error.value = null
 
     try {
-      // Step 1: Generate subtitle script
-      currentStep.value = '台本(字幕モード)を生成中...'
-      const subtitleScript = await callAgent('script-generation-subtitle', {
-        roleplayDesign: design,
-        files
-      })
+      // Step 1: Generate all scripts in parallel
+      currentStep.value = '台本を生成中...'
+      const [subtitleScript, pointsScript, practiceScript] = await Promise.all([
+        callAgent('script-generation-subtitle', {
+          roleplayDesign: design,
+          files
+        }),
+        callAgent('script-generation-points', {
+          roleplayDesign: design,
+          files
+        }),
+        callAgent('script-generation-practice', {
+          roleplayDesign: design,
+          files
+        })
+      ])
 
-      // Step 2: Generate points script
-      currentStep.value = '台本(ポイントモード)を生成中...'
-      const pointsScript = await callAgent('script-generation-points', {
-        roleplayDesign: design,
-        files
-      })
-
-      // Step 3: Generate practice script
-      currentStep.value = '台本(練習モード)を生成中...'
-      const practiceScript = await callAgent('script-generation-practice', {
-        roleplayDesign: design,
-        files
-      })
-
-      // Step 4: Generate system prompts for each mode
+      // Step 2: Generate system prompts for each mode in parallel
       currentStep.value = 'システムプロンプトを生成中...'
-      
-      const subtitlePrompt = await callAgent('system-prompt-subtitle', {
-        roleplayDesign: design,
-        script: subtitleScript
-      })
-
-      const aiDemoPrompt = await callAgent('system-prompt-aiDemo', {
-        roleplayDesign: design,
-        script: subtitleScript
-      })
-
-      const confirmationPrompt = await callAgent('system-prompt-confirmation', {
-        roleplayDesign: design,
-        script: pointsScript
-      })
-
-      const practicePrompt = await callAgent('system-prompt-practice', {
-        roleplayDesign: design,
-        script: practiceScript
-      })
+      const [subtitlePrompt, aiDemoPrompt, confirmationPrompt, practicePrompt] = await Promise.all([
+        callAgent('system-prompt-subtitle', {
+          roleplayDesign: design,
+          script: subtitleScript.script
+        }),
+        callAgent('system-prompt-aiDemo', {
+          roleplayDesign: design,
+          script: subtitleScript.script
+        }),
+        callAgent('system-prompt-confirmation', {
+          roleplayDesign: design,
+          script: pointsScript.script
+        }),
+        callAgent('system-prompt-practice', {
+          roleplayDesign: design,
+          script: practiceScript.script
+        })
+      ])
 
       currentStep.value = '完了'
-      
+
       return {
         scripts: {
-          subtitle: subtitleScript,
-          points: pointsScript,
-          practice: practiceScript
+          subtitle: subtitleScript.script,
+          points: pointsScript.script,
+          practice: practiceScript.script
         },
         systemPrompts: {
-          subtitle: subtitlePrompt.response,
-          aiDemo: aiDemoPrompt.response,
-          confirmation: confirmationPrompt.response,
-          practice: practicePrompt.response
+          subtitle: subtitlePrompt.systemPrompt,
+          aiDemo: aiDemoPrompt.systemPrompt,
+          confirmation: confirmationPrompt.systemPrompt,
+          practice: practicePrompt.systemPrompt
         }
       }
     } catch (err) {
@@ -165,12 +180,33 @@ export const useAgentOrchestrator = () => {
     }
   }
 
+  /**
+   * Runtimeプロンプトを取得する（音声会話用）
+   * @param mode モード名 (subtitle, demo, confirmation, practice)
+   * @param design ロープレ設計
+   * @param script 生成された台本
+   */
+  async function getRuntimePrompt(
+    mode: 'subtitle' | 'demo' | 'confirmation' | 'practice',
+    design: RoleplayDesign,
+    script?: string
+  ): Promise<string> {
+    // サーバーサイドで変数置換済みのプロンプトを取得
+    const response = await callAgent(`system-prompt-${mode === 'demo' ? 'aiDemo' : mode}`, {
+      roleplayDesign: design,
+      script: script || ''
+    })
+    return response.systemPrompt || ''
+  }
+
   return {
     isGenerating: readonly(isGenerating),
     currentStep: readonly(currentStep),
     error: readonly(error),
     generateRoleplay,
     getChatSupport,
-    getFeedback
+    getFeedback,
+    getPrompt,
+    getRuntimePrompt
   }
 }

@@ -23,7 +23,6 @@
           :items="categoryOptions"
           size="sm"
           class="flex-1"
-          :ui="{ base: 'inline-flex items-center' }"
         />
       </div>
 
@@ -68,6 +67,7 @@
           @file-uploaded="handleFileUploaded"
           @file-upload-started="handleFileUploadStarted"
           @file-type-updated="handleFileTypeUpdated"
+          @open-file-selection="openFileSelectionDialog"
         />
       </div>
 
@@ -149,7 +149,6 @@
                   :items="fileTypeOptions"
                   size="xs"
                   class="min-w-[100px]"
-                  :ui="{ base: 'inline-flex items-center' }"
                   @click.stop
                 />
                 <UButton
@@ -185,7 +184,6 @@
             placeholder="レッスンを選択..."
             size="sm"
             class="flex-1"
-            :ui="{ base: 'inline-flex items-center' }"
           />
         </div>
       </div>
@@ -301,7 +299,6 @@
               :items="characterOptions"
               size="sm"
               class="w-full"
-              :ui="{ base: 'inline-flex items-center' }"
             />
           </div>
 
@@ -314,7 +311,6 @@
                 :items="voiceOptions"
                 size="sm"
                 class="w-full"
-                :ui="{ base: 'inline-flex items-center' }"
               />
             </div>
           </div>
@@ -859,10 +855,116 @@ const editPrompt = (index: number) => {
   console.log('Edit prompt', index)
 }
 
-const handleGenerate = (selectedFiles: FileData[]) => {
-  // TODO: ロープレ生成処理
-  console.log('Generate roleplay with files:', selectedFiles)
+// ファイル選択ダイアログを開く
+const openFileSelectionDialog = () => {
+  showFileSelectionDialog.value = true
+}
+
+// ロープレ生成処理
+const handleGenerate = async (selectedFiles: FileData[]) => {
   showFileSelectionDialog.value = false
+
+  // ロープレ設計データを取得
+  const roleplayDesign = roleplayDesignForm.value?.getDesign?.() || null
+
+  // 台本生成
+  try {
+    // ローディング状態を表示（チャットに追加）
+    if (chatAreaRef.value) {
+      chatAreaRef.value.messages.push({
+        role: 'assistant',
+        content: `<div style="display: flex; align-items: center; gap: 8px;">
+          <span class="cc-loading-spinner" style="width: 16px; height: 16px; border: 2px solid #e5e7eb; border-top-color: #3b82f6; border-radius: 50%; animation: spin 0.8s linear infinite;"></span>
+          <span>ロープレコンテンツを生成中...</span>
+        </div>`
+      })
+    }
+
+    // 各モードの台本を生成
+    const modes = ['subtitle', 'confirmation', 'practice']
+    const modeLabels: Record<string, string> = {
+      'subtitle': '台本モード',
+      'confirmation': '確認モード',
+      'practice': '実戦モード'
+    }
+
+    for (const mode of modes) {
+      const response = await $fetch<{ mode: string; script: string }>('/api/generate-script', {
+        method: 'POST',
+        body: {
+          mode,
+          roleplayDesign,
+          files: selectedFiles.map(f => ({
+            name: f.name,
+            content: f.extractedText,
+            dataType: f.dataType
+          }))
+        }
+      })
+
+      // 生成された台本をscriptsに追加
+      const existingIndex = scripts.value.findIndex(s => s.mode === modeLabels[mode])
+      if (existingIndex >= 0) {
+        scripts.value[existingIndex].content = response.script
+      } else {
+        scripts.value.push({
+          mode: modeLabels[mode],
+          content: response.script,
+          expanded: false
+        })
+      }
+    }
+
+    // 完了メッセージ
+    if (chatAreaRef.value) {
+      // ローディングメッセージを削除
+      const loadingIndex = chatAreaRef.value.messages.findIndex(
+        (m: { content: string }) => m.content.includes('ロープレコンテンツを生成中')
+      )
+      if (loadingIndex >= 0) {
+        chatAreaRef.value.messages.splice(loadingIndex, 1)
+      }
+
+      chatAreaRef.value.messages.push({
+        role: 'assistant',
+        content: `<div>
+          <div style="color: #10b981; font-weight: 600; margin-bottom: 8px;">✓ ロープレ生成完了</div>
+          <div>以下のコンテンツが生成されました：</div>
+          <ul style="margin-top: 8px; padding-left: 20px;">
+            <li>台本モード</li>
+            <li>確認モード</li>
+            <li>実戦モード</li>
+          </ul>
+          <div style="margin-top: 12px; padding: 8px 12px; background: #f0fdf4; border-radius: 6px; border-left: 3px solid #10b981;">
+            「会話の流れ」タブから確認・編集できます
+          </div>
+        </div>`
+      })
+    }
+
+    // 会話の流れタブに切り替え
+    designTab.value = 'script'
+  } catch (error) {
+    console.error('Error generating roleplay:', error)
+
+    if (chatAreaRef.value) {
+      // ローディングメッセージを削除
+      const loadingIndex = chatAreaRef.value.messages.findIndex(
+        (m: { content: string }) => m.content.includes('ロープレコンテンツを生成中')
+      )
+      if (loadingIndex >= 0) {
+        chatAreaRef.value.messages.splice(loadingIndex, 1)
+      }
+
+      chatAreaRef.value.messages.push({
+        role: 'assistant',
+        content: `<div style="color: #ef4444;">
+          <div style="font-weight: 600; margin-bottom: 8px;">⚠ 生成エラー</div>
+          <div>ロープレの生成中にエラーが発生しました。もう一度お試しください。</div>
+        </div>`
+      })
+    }
+  }
 }
 
 const handleFileUploadStarted = (file: FileData) => {

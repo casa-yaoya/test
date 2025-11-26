@@ -106,7 +106,6 @@
                   :items="chartCompareAxisOptions"
                   size="sm"
                   class="min-w-[120px]"
-                  :ui="{ base: 'inline-flex items-center' }"
                 />
               </div>
             </div>
@@ -135,7 +134,6 @@
                   :items="displayUnitOptions"
                   size="sm"
                   class="min-w-[120px]"
-                  :ui="{ base: 'inline-flex items-center' }"
                 />
               </div>
             </div>

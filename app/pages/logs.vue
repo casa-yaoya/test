@@ -24,10 +24,15 @@
           </div>
           <div class="log-toolbar">
             <div class="log-info">
-              <span class="info-badge">
-                <UIcon name="i-lucide-list" class="info-icon" />
-                {{ sortedData.length }}件
-              </span>
+              <span class="page-size-label">表示件数：</span>
+              <USelect
+                :model-value="pageSize"
+                :items="pageSizeOptions"
+                size="sm"
+                class="page-size-select"
+                value-key="value"
+                @update:model-value="changePageSize"
+              />
               <span class="page-info">
                 <UIcon name="i-lucide-book-open" class="info-icon" />
                 ページ {{ currentPage }} / {{ totalPages }}
@@ -185,7 +190,16 @@ const filterOptions = computed(() => getFilterOptions())
 const logData = ref<any[]>([])
 const currentPage = ref(1)
 const totalPages = ref(1)
-const pageSize = 20
+const pageSize = ref(20)
+
+// ページサイズオプション
+const pageSizeOptions = [
+  { label: '20件', value: 20 },
+  { label: '50件', value: 50 },
+  { label: '100件', value: 100 },
+  { label: '500件', value: 500 },
+  { label: '1000件', value: 1000 }
+]
 
 // フィルター折りたたみ状態
 const isFilterCollapsed = ref(false)
@@ -274,14 +288,21 @@ const changePage = (delta: number) => {
 const loadLogData = () => {
   // フィルターを適用してログデータを取得
   if (typeof getFilteredLogData === 'function') {
-    const result = getFilteredLogData(currentPage.value, pageSize, currentFilters.value)
+    const result = getFilteredLogData(currentPage.value, pageSize.value, currentFilters.value)
     logData.value = result.data
     totalPages.value = result.totalPages
   } else {
-    const result = getLogData(currentPage.value, pageSize)
+    const result = getLogData(currentPage.value, pageSize.value)
     logData.value = result.data
     totalPages.value = result.totalPages
   }
+}
+
+// ページサイズ変更
+const changePageSize = (newSize: number) => {
+  pageSize.value = newSize
+  currentPage.value = 1 // 1ページ目に戻る
+  loadLogData()
 }
 
 // CSVダウンロード
@@ -409,6 +430,16 @@ onMounted(async () => {
 .info-icon {
   font-size: 14px;
   color: #6366f1;
+}
+
+.page-size-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ui-text);
+}
+
+.page-size-select {
+  min-width: 100px;
 }
 
 .table-actions {

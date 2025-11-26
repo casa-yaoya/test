@@ -33,33 +33,10 @@ export default defineAppConfig({
         }
       }
     },
-    // セレクトのデフォルト設定
+    // セレクトのデフォルト設定（デフォルトの配置を維持）
     select: {
-      slots: {
-        base: 'inline-flex items-center justify-between gap-1.5 rounded-md border border-gray-200 bg-white text-sm',
-        leading: 'flex items-center',
-        leadingIcon: 'shrink-0 text-gray-400',
-        value: 'truncate text-left',
-        trailing: 'flex items-center shrink-0',
-        trailingIcon: 'shrink-0 text-gray-400'
-      },
-      variants: {
-        size: {
-          xs: { base: 'h-7 px-2 text-xs' },
-          sm: { base: 'h-8 px-2.5 text-sm' },
-          md: { base: 'h-9 px-3 text-sm' },
-          lg: { base: 'h-10 px-3.5 text-base' },
-          xl: { base: 'h-11 px-4 text-base' }
-        }
-      }
-    },
-    // セレクトメニュー（ドロップダウン部分）のデフォルト設定
-    selectMenu: {
-      slots: {
-        content: 'bg-white border border-gray-200 rounded-md shadow-lg',
-        item: 'flex items-center gap-2 px-2.5 py-1.5 text-sm text-gray-700 cursor-pointer hover:bg-gray-50',
-        itemLeadingIcon: 'shrink-0 text-gray-400',
-        itemTrailingIcon: 'shrink-0 text-gray-400'
+      defaultVariants: {
+        variant: 'outline'
       }
     },
     // カードのデフォルト設定

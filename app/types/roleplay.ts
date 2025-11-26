@@ -1,5 +1,21 @@
 // Roleplay design and course management types
 
+export interface FileData {
+  name: string
+  dataType: string  // 見本データ, 教材データ, 自社データ, 顧客データ, その他, 未分類
+  type?: string     // MIME type
+  extractedText?: string
+  content?: string
+  summary?: string
+  size: number
+  uploadDate: string
+}
+
+export interface ChatMessage {
+  role: 'user' | 'assistant'
+  content: string
+}
+
 export interface RoleplayDesign {
   situation: string
   opponentSetting: string

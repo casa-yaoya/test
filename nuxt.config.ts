@@ -24,6 +24,10 @@ export default defineNuxtConfig({
   },
 
   app: {
+    // GitHub Pages用: リポジトリ名に合わせて変更してください
+    // 例: https://username.github.io/naretore-nuxt/ の場合は '/naretore-nuxt/'
+    // カスタムドメインを使う場合は '/' のままでOK
+    baseURL: process.env.NUXT_APP_BASE_URL || '/',
     head: {
       title: 'ナレトレ管理画面',
       meta: [

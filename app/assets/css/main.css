@@ -1923,34 +1923,7 @@ button, a {
   background: #94a3b8;
 }
 
-/* ==============================================
-   Dropdown/Select Background Fix
-   ============================================== */
-/* NuxtUI dropdown/select menus */
-[data-radix-popper-content-wrapper],
-[data-headlessui-state],
-[role="listbox"],
-[role="menu"],
-.dropdown-content,
-select option {
-  background-color: white !important;
-}
-
-/* ==============================================
-   Dropdown Background Fix
-   ============================================== */
-/* Ensure dropdown items have proper background */
-[role="option"],
-[role="menuitem"],
-.dropdown-item {
-  background-color: white;
-}
-
-[role="option"]:hover,
-[role="menuitem"]:hover,
-.dropdown-item:hover {
-  background-color: #f1f5f9;
-}
+/* Nuxt UI v3のデフォルトドロップダウンスタイルを使用 */
 
 /* ==============================================
    NuxtUI Component Overrides

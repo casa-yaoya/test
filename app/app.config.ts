@@ -5,57 +5,57 @@ export default defineAppConfig({
       primary: 'sky',
       neutral: 'slate'
     },
-    // ボタンのデフォルト設定
+
+    // ボタン - Nuxt UI v3デフォルトを拡張
     button: {
-      slots: {
-        base: 'rounded-md font-medium border-[0.5px]'
-      },
-      variants: {
-        size: {
-          xs: { base: 'px-2 py-1 text-xs' },
-          sm: { base: 'px-3 py-1.5 text-sm' },
-          md: { base: 'px-3.5 py-2 text-sm' },
-          lg: { base: 'px-4 py-2.5 text-base' },
-          xl: { base: 'px-5 py-3 text-base' }
-        }
+      defaultVariants: {
+        size: 'sm',
+        color: 'primary',
+        variant: 'solid'
       }
     },
-    // インプットのデフォルト設定
-    input: {
-      slots: {
-        root: 'rounded-md border border-gray-200'
-      },
-      variants: {
-        size: {
-          sm: { base: 'px-2.5 py-1.5 text-sm' },
-          md: { base: 'px-3 py-2 text-sm' },
-          lg: { base: 'px-3.5 py-2.5 text-base' }
-        }
-      }
-    },
-    // セレクトのデフォルト設定（デフォルトの配置を維持）
+
+    // セレクト - Nuxt UI v3デフォルトを使用（カスタムCSSで上書きしない）
     select: {
       defaultVariants: {
+        size: 'md',
+        color: 'primary',
         variant: 'outline'
       }
     },
-    // カードのデフォルト設定
+
+    // インプット
+    input: {
+      defaultVariants: {
+        size: 'md',
+        color: 'primary',
+        variant: 'outline'
+      }
+    },
+
+    // カード
     card: {
       slots: {
-        root: 'rounded-lg border border-gray-200 bg-white shadow-sm',
-        body: 'p-5'
+        root: 'bg-white rounded-xl border border-slate-200 shadow-sm',
+        header: 'px-5 py-4 border-b border-slate-100',
+        body: 'p-5',
+        footer: 'px-5 py-4 border-t border-slate-100'
       }
     },
-    // チェックボックスのデフォルト設定
+
+    // チェックボックス
     checkbox: {
-      slots: {
-        base: 'rounded border border-gray-300'
+      defaultVariants: {
+        color: 'primary'
       }
     },
-    // アイコンのデフォルト設定
-    icon: {
-      slots: {
-        base: 'shrink-0'
+
+    // バッジ
+    badge: {
+      defaultVariants: {
+        size: 'sm',
+        color: 'primary',
+        variant: 'soft'
       }
     }
   }

@@ -11,7 +11,20 @@
       "Bash(copy:*)",
       "Bash(npm install:*)",
       "Bash(npm uninstall:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(git checkout:*)",
+      "Bash(dir:*)",
+      "Bash(taskkill:*)",
+      "Bash(timeout /t 2 /nobreak)",
+      "Bash(pkill:*)",
+      "Bash(del temp-old-css.txt)",
+      "Bash(if exist temp-old-css.txt del temp-old-css.txt)",
+      "Bash(git push:*)",
+      "Bash(git remote add:*)",
+      "Bash(npm run build:*)",
+      "Bash(netstat:*)",
+      "Bash(tasklist:*)",
+      "Bash(npm run generate:*)"
     ],
     "deny": [],
     "ask": []

@@ -229,8 +229,8 @@ const emit = defineEmits<{
   (e: 'update:collapsed', collapsed: boolean): void
 }>()
 
-// フィルターパネル全体の開閉状態（デフォルトは開いた状態）
-const isFilterPanelOpen = ref(props.initialOpen !== false)
+// フィルターパネル全体の開閉状態（デフォルトは常に開いた状態）
+const isFilterPanelOpen = ref(true)
 
 // スマホ判定
 const isMobile = ref(false)

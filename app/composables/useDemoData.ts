@@ -434,6 +434,7 @@ export const useDemoData = () => {
     // 集計
     const aggregateMap = new Map<string, {
       playCount: number
+      clearCount: number // クリア数（スコア70以上）
       totalScore: number
       bestScore: number
       totalSpeechTime: number
@@ -462,8 +463,10 @@ export const useDemoData = () => {
       }
 
       const existing = aggregateMap.get(key)
+      const isClear = session.score >= 70 // 70点以上をクリアとする
       if (existing) {
         existing.playCount++
+        if (isClear) existing.clearCount++
         existing.totalScore += session.score
         existing.bestScore = Math.max(existing.bestScore, session.score)
         existing.totalSpeechTime += session.speechTime
@@ -478,6 +481,7 @@ export const useDemoData = () => {
         playerScores.set(session.player, session.score)
         aggregateMap.set(key, {
           playCount: 1,
+          clearCount: isClear ? 1 : 0,
           totalScore: session.score,
           bestScore: session.score,
           totalSpeechTime: session.speechTime,
@@ -534,6 +538,7 @@ export const useDemoData = () => {
         levelDisplay,
         lessonDisplay,
         playCount: stats.playCount,
+        clearCount: stats.clearCount,
         avgScore: Math.round(stats.totalScore / stats.playCount),
         bestScore: stats.bestScore,
         totalPlayTime: stats.totalPlayTime,
@@ -690,6 +695,18 @@ export const useDemoData = () => {
       total: sorted.length,
       totalPages: Math.ceil(sorted.length / pageSize)
     }
+  }
+
+  // フィルター適用済み全ログデータ取得（CSVダウンロード用）
+  const getAllFilteredLogData = (filters: {
+    lessons?: string[]
+    levels?: string[]
+    players?: string[]
+    dateFrom?: Date | null
+    dateTo?: Date | null
+  }) => {
+    const filtered = applyFilters(allSessions.value, filters)
+    return [...filtered].sort((a, b) => b.date.getTime() - a.date.getTime())
   }
 
   // フィルタリングされた集計統計を取得
@@ -1204,6 +1221,130 @@ export const useDemoData = () => {
     }
   }
 
+  // フィルター適用済み個人記録データ取得（コース > レベル > レッスン のネスト構造）
+  const getFilteredPersonalRecords = (filters: {
+    lessons?: string[]
+    levels?: string[]
+    players?: string[]
+    dateFrom?: Date | null
+    dateTo?: Date | null
+  }) => {
+    const filtered = applyFilters(allSessions.value, filters)
+
+    // コース（カテゴリー）ごとにグループ化
+    const courseMap = new Map<string, {
+      levels: Map<string, {
+        lessons: Map<string, {
+          title: string
+          bestScore: number
+          latestScore: number
+          latestDate: Date
+          playCount: number
+          sessions: SessionData[]
+        }>
+      }>
+    }>()
+
+    filtered.forEach(session => {
+      // コースの初期化
+      if (!courseMap.has(session.category)) {
+        courseMap.set(session.category, { levels: new Map() })
+      }
+      const course = courseMap.get(session.category)!
+
+      // レベルの初期化
+      if (!course.levels.has(session.level)) {
+        course.levels.set(session.level, { lessons: new Map() })
+      }
+      const level = course.levels.get(session.level)!
+
+      // レッスンの初期化または更新
+      if (!level.lessons.has(session.lesson)) {
+        level.lessons.set(session.lesson, {
+          title: session.lesson,
+          bestScore: session.score,
+          latestScore: session.score,
+          latestDate: session.date,
+          playCount: 1,
+          sessions: [session]
+        })
+      } else {
+        const lessonData = level.lessons.get(session.lesson)!
+        lessonData.playCount++
+        lessonData.sessions.push(session)
+        // ベストスコア更新
+        if (session.score > lessonData.bestScore) {
+          lessonData.bestScore = session.score
+        }
+        // 最新スコア更新（日付が新しい場合）
+        if (session.date > lessonData.latestDate) {
+          lessonData.latestScore = session.score
+          lessonData.latestDate = session.date
+        }
+      }
+    })
+
+    // 結果を構造化して返す
+    const result: {
+      category: string
+      levels: {
+        level: string
+        lessons: {
+          title: string
+          bestScore: number
+          latestScore: number
+          latestDate: Date
+          playCount: number
+          sessions: SessionData[]
+        }[]
+      }[]
+    }[] = []
+
+    // コース名でソート
+    const sortedCourses = Array.from(courseMap.keys()).sort()
+
+    sortedCourses.forEach(courseName => {
+      const course = courseMap.get(courseName)!
+      const levelsArray: {
+        level: string
+        lessons: {
+          title: string
+          bestScore: number
+          latestScore: number
+          latestDate: Date
+          playCount: number
+          sessions: SessionData[]
+        }[]
+      }[] = []
+
+      // レベルでソート
+      const sortedLevels = Array.from(course.levels.keys()).sort((a, b) => parseInt(a) - parseInt(b))
+
+      sortedLevels.forEach(levelNum => {
+        const level = course.levels.get(levelNum)!
+        const lessonsArray = Array.from(level.lessons.values())
+          .map(lesson => ({
+            ...lesson,
+            // セッションを日付降順でソート
+            sessions: lesson.sessions.sort((a, b) => b.date.getTime() - a.date.getTime())
+          }))
+          .sort((a, b) => a.title.localeCompare(b.title, 'ja'))
+
+        levelsArray.push({
+          level: levelNum,
+          lessons: lessonsArray
+        })
+      })
+
+      result.push({
+        category: courseName,
+        levels: levelsArray
+      })
+    })
+
+    return result
+  }
+
   return {
     allSessions,
     isDataLoaded,
@@ -1227,6 +1368,8 @@ export const useDemoData = () => {
     getFilteredPlayerStats,
     getFilteredRankingData,
     getFilteredLogData,
-    getFilteredAggregatedStats
+    getAllFilteredLogData,
+    getFilteredAggregatedStats,
+    getFilteredPersonalRecords
   }
 }

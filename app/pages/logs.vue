@@ -118,19 +118,36 @@
                 <tr v-if="sortedData.length === 0">
                   <td :colspan="visibleColumnCount" class="text-center text-gray-600">データがありません</td>
                 </tr>
-                <tr v-for="(session, index) in sortedData" :key="index">
-                  <td v-if="visibleColumns.date">{{ formatDateTime(session.date) }}</td>
-                  <td v-if="visibleColumns.org">{{ session.org }}</td>
-                  <td v-if="visibleColumns.account">{{ session.account }}</td>
-                  <td v-if="visibleColumns.group">{{ session.group }}</td>
-                  <td v-if="visibleColumns.player">{{ session.player }}</td>
-                  <td v-if="visibleColumns.category">{{ session.category }}</td>
-                  <td v-if="visibleColumns.level">Lv.{{ session.level }}</td>
-                  <td v-if="visibleColumns.lesson">{{ session.lesson }}</td>
-                  <td v-if="visibleColumns.score">{{ session.score }}</td>
-                  <td v-if="visibleColumns.speechTime">{{ session.speechTime }}s</td>
-                  <td v-if="visibleColumns.playTime">{{ session.playTime }}s</td>
-                </tr>
+                <template v-for="(session, index) in sortedData" :key="index">
+                  <tr
+                    class="log-row"
+                    :class="{ 'expanded': expandedRows[index] }"
+                    @click="toggleRow(index)"
+                  >
+                    <td v-if="visibleColumns.date">
+                      <UIcon
+                        :name="expandedRows[index] ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right'"
+                        class="expand-icon"
+                      />
+                      {{ formatDateTime(session.date) }}
+                    </td>
+                    <td v-if="visibleColumns.org">{{ session.org }}</td>
+                    <td v-if="visibleColumns.account">{{ session.account }}</td>
+                    <td v-if="visibleColumns.group">{{ session.group }}</td>
+                    <td v-if="visibleColumns.player">{{ session.player }}</td>
+                    <td v-if="visibleColumns.category">{{ session.category }}</td>
+                    <td v-if="visibleColumns.level">Lv.{{ session.level }}</td>
+                    <td v-if="visibleColumns.lesson">{{ session.lesson }}</td>
+                    <td v-if="visibleColumns.score">{{ session.score }}</td>
+                    <td v-if="visibleColumns.speechTime">{{ session.speechTime }}s</td>
+                    <td v-if="visibleColumns.playTime">{{ session.playTime }}s</td>
+                  </tr>
+                  <tr v-show="expandedRows[index]" class="detail-row">
+                    <td :colspan="visibleColumnCount">
+                      <SessionDetail :session="session" :show-full-info="true" />
+                    </td>
+                  </tr>
+                </template>
               </tbody>
             </table>
           </div>
@@ -169,7 +186,7 @@ definePageMeta({
 })
 
 // デモデータ管理
-const { isDataLoaded, loadDemoData, getFilterOptions, getLogData, getFilteredLogData } = useDemoData()
+const { isDataLoaded, loadDemoData, getFilterOptions, getLogData, getFilteredLogData, getAllFilteredLogData } = useDemoData()
 
 // 現在のフィルター値
 const currentFilters = ref<{
@@ -238,6 +255,14 @@ const visibleColumns = reactive<Record<string, boolean>>({
   playTime: true
 })
 
+// 行の展開状態
+const expandedRows = reactive<Record<number, boolean>>({})
+
+// 行の展開トグル
+const toggleRow = (index: number) => {
+  expandedRows[index] = !expandedRows[index]
+}
+
 // 表示列数を計算
 const visibleColumnCount = computed(() => {
   return Object.values(visibleColumns).filter(v => v).length
@@ -305,18 +330,21 @@ const changePageSize = (newSize: number) => {
   loadLogData()
 }
 
-// CSVダウンロード
+// CSVダウンロード（フィルター適用後の全データ）
 const downloadCSV = () => {
+  // フィルター適用後の全データを取得
+  const allData = getAllFilteredLogData(currentFilters.value)
+
   // 表示中の列のみCSVに含める
   const headers = columnDefinitions
     .filter(col => visibleColumns[col.key])
     .map(col => col.label)
 
-  const rows = sortedData.value.map(session => {
+  const rows = allData.map(session => {
     return columnDefinitions
       .filter(col => visibleColumns[col.key])
       .map(col => {
-        const value = session[col.key]
+        const value = (session as any)[col.key]
         if (col.key === 'date') {
           return formatDateTime(value)
         }
@@ -557,6 +585,47 @@ onMounted(async () => {
 
 .sortable.sorted .sort-icon {
   color: #6366f1;
+}
+
+/* ========================================
+   行の展開機能
+   ======================================== */
+.log-row {
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.log-row:hover {
+  background: var(--ui-bg-elevated);
+}
+
+.log-row.expanded {
+  background: rgba(99, 102, 241, 0.05);
+}
+
+.log-row td:first-child {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.expand-icon {
+  font-size: 12px;
+  color: var(--ui-text-dimmed);
+  flex-shrink: 0;
+}
+
+.log-row.expanded .expand-icon {
+  color: #6366f1;
+}
+
+.detail-row {
+  background: var(--ui-bg-muted);
+}
+
+.detail-row td {
+  padding: 0 !important;
+  border-top: none;
 }
 
 /* ========================================

@@ -31,8 +31,13 @@ export const useDemoData = () => {
       if (values.length < 11) continue
 
       try {
+        // UTCの日付をJST（日本時間）として扱う
+        const utcDate = new Date(values[0])
+        // UTC時間に9時間加算してJSTに変換
+        const jstDate = new Date(utcDate.getTime() + 9 * 60 * 60 * 1000)
+
         const session: SessionData = {
-          date: new Date(values[0]),
+          date: jstDate,
           org: values[1],
           account: values[2],
           group: values[3],

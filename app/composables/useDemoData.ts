@@ -58,7 +58,11 @@ export const useDemoData = () => {
 
   const loadDemoData = async () => {
     try {
-      const response = await fetch('/demo-data.csv')
+      // GitHub Pages対応: baseURLを考慮したパスを生成
+      const config = useRuntimeConfig()
+      const baseURL = config.app?.baseURL || '/'
+      const csvPath = `${baseURL}demo-data.csv`.replace(/\/+/g, '/')
+      const response = await fetch(csvPath)
       if (!response.ok) {
         throw new Error('デモデータファイルが見つかりません')
       }

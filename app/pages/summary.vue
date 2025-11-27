@@ -192,6 +192,8 @@
                   <th v-if="visibleColumns.lesson">レッスン</th>
                   <th v-if="visibleColumns.playCount">プレイ数</th>
                   <th v-if="visibleColumns.clearCount">クリア数</th>
+                  <th v-if="visibleColumns.uniquePlayerCount">プレイ人数</th>
+                  <th v-if="visibleColumns.fivePlusPlayerCount">5回以上</th>
                   <th v-if="visibleColumns.avgScore">平均</th>
                   <th v-if="visibleColumns.bestScore">ベスト</th>
                   <th v-if="visibleColumns.totalPlayTime">累計時間</th>
@@ -220,6 +222,8 @@
                     <td v-if="visibleColumns.lesson" class="whitespace-pre-line">{{ item.lessonDisplay }}</td>
                     <td v-if="visibleColumns.playCount">{{ item.playCount }}回</td>
                     <td v-if="visibleColumns.clearCount">{{ item.clearCount || 0 }}回</td>
+                    <td v-if="visibleColumns.uniquePlayerCount">{{ item.uniquePlayerCount || 0 }}人</td>
+                    <td v-if="visibleColumns.fivePlusPlayerCount">{{ item.fivePlusPlayerCount || 0 }}人</td>
                     <td v-if="visibleColumns.avgScore">{{ item.avgScore }}点</td>
                     <td v-if="visibleColumns.bestScore">{{ item.bestScore }}点</td>
                     <td v-if="visibleColumns.totalPlayTime">{{ formatTime(item.totalPlayTime) }}</td>
@@ -390,6 +394,8 @@ const columnDefinitions = [
   { key: 'lesson', label: 'レッスン' },
   { key: 'playCount', label: 'プレイ数' },
   { key: 'clearCount', label: 'クリア数' },
+  { key: 'uniquePlayerCount', label: 'プレイ人数' },
+  { key: 'fivePlusPlayerCount', label: '5回以上' },
   { key: 'avgScore', label: '平均' },
   { key: 'bestScore', label: 'ベスト' },
   { key: 'totalPlayTime', label: '累計時間' },
@@ -404,6 +410,8 @@ const visibleColumns = reactive<Record<string, boolean>>({
   lesson: true,
   playCount: true,
   clearCount: true,
+  uniquePlayerCount: true,
+  fivePlusPlayerCount: true,
   avgScore: true,
   bestScore: true,
   totalPlayTime: true,
@@ -530,6 +538,8 @@ const downloadSummaryOnlyCSV = () => {
         if (col.key === 'lesson') return item.lessonDisplay
         if (col.key === 'playCount') return item.playCount
         if (col.key === 'clearCount') return item.clearCount || 0
+        if (col.key === 'uniquePlayerCount') return item.uniquePlayerCount || 0
+        if (col.key === 'fivePlusPlayerCount') return item.fivePlusPlayerCount || 0
         if (col.key === 'avgScore') return item.avgScore
         if (col.key === 'bestScore') return item.bestScore
         if (col.key === 'totalPlayTime') return formatTime(item.totalPlayTime)
@@ -556,7 +566,7 @@ const downloadSummaryOnlyCSV = () => {
 // プレイヤー詳細を含むCSVダウンロード
 const downloadCSVWithPlayerDetails = () => {
   // ヘッダー：カテゴリー、レベル、レッスン、アカウント、グループ、プレイヤー、各種統計
-  const headers = ['コース', 'レベル', 'レッスン', 'アカウント', 'グループ', 'プレイヤー', 'プレイ数', 'クリア数', '平均', 'ベスト', '累計時間', '平均時間']
+  const headers = ['コース', 'レベル', 'レッスン', 'アカウント', 'グループ', 'プレイヤー', 'プレイ数', 'クリア数', 'プレイ人数', '5回以上', '平均', 'ベスト', '累計時間', '平均時間']
 
   const rows: string[][] = []
 
@@ -584,6 +594,8 @@ const downloadCSVWithPlayerDetails = () => {
               player.player,
               String(player.playCount),
               String(player.clearCount),
+              '-',
+              '-',
               `${player.avgScore}点`,
               `${player.bestScore}点`,
               formatTime(player.totalPlayTime),
@@ -603,6 +615,8 @@ const downloadCSVWithPlayerDetails = () => {
         '(集計)',
         String(item.playCount),
         String(item.clearCount || 0),
+        String(item.uniquePlayerCount || 0),
+        String(item.fivePlusPlayerCount || 0),
         `${item.avgScore}点`,
         `${item.bestScore}点`,
         formatTime(item.totalPlayTime),

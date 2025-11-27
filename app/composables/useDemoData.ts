@@ -455,6 +455,8 @@ export const useDemoData = () => {
       levels: Set<string>
       lessons: Set<string>
       playerScores: Map<string, number> // プレイヤーごとの総スコア
+      uniquePlayers: Set<string> // ユニークプレイヤー
+      playerPlayCounts: Map<string, number> // プレイヤーごとのプレイ回数
     }>()
 
     filtered.forEach(session => {
@@ -485,12 +487,18 @@ export const useDemoData = () => {
         existing.totalPlayTime += session.playTime
         existing.levels.add(`Lv.${session.level}`)
         existing.lessons.add(session.lesson)
+        existing.uniquePlayers.add(session.player)
         // プレイヤースコア加算
         const currentPlayerScore = existing.playerScores.get(session.player) || 0
         existing.playerScores.set(session.player, currentPlayerScore + session.score)
+        // プレイヤープレイ回数加算
+        const currentPlayCount = existing.playerPlayCounts.get(session.player) || 0
+        existing.playerPlayCounts.set(session.player, currentPlayCount + 1)
       } else {
         const playerScores = new Map<string, number>()
         playerScores.set(session.player, session.score)
+        const playerPlayCounts = new Map<string, number>()
+        playerPlayCounts.set(session.player, 1)
         aggregateMap.set(key, {
           playCount: 1,
           clearCount: isClear ? 1 : 0,
@@ -501,7 +509,9 @@ export const useDemoData = () => {
           category: session.category,
           levels: new Set([`Lv.${session.level}`]),
           lessons: new Set([session.lesson]),
-          playerScores
+          playerScores,
+          uniquePlayers: new Set([session.player]),
+          playerPlayCounts
         })
       }
     })
@@ -551,12 +561,20 @@ export const useDemoData = () => {
         }
       })
 
+      // 5回以上プレイしたプレイヤー数をカウント
+      let fivePlusPlayerCount = 0
+      stats.playerPlayCounts.forEach((count) => {
+        if (count >= 5) fivePlusPlayerCount++
+      })
+
       return {
         category: stats.category,
         levelDisplay,
         lessonDisplay,
         playCount: stats.playCount,
         clearCount: stats.clearCount,
+        uniquePlayerCount: stats.uniquePlayers.size,
+        fivePlusPlayerCount,
         avgScore: Math.round(stats.totalScore / stats.playCount),
         bestScore: stats.bestScore,
         totalPlayTime: stats.totalPlayTime,
@@ -666,9 +684,11 @@ export const useDemoData = () => {
       totalScore: number
       totalPlayTime: number
       totalSpeechTime: number
+      monthlyPlays: Map<number, number> // 月別プレイ数（key: 月番号 8,9,10など）
     }>()
 
     filtered.forEach(session => {
+      const month = session.date.getMonth() + 1 // 1-12
       const existing = playerMap.get(session.player)
       const isClear = session.score >= 70 // スコア70以上をクリアとみなす
       if (existing) {
@@ -677,7 +697,11 @@ export const useDemoData = () => {
         existing.totalScore += session.score
         existing.totalPlayTime += session.playTime
         existing.totalSpeechTime += session.speechTime
+        // 月別プレイ数をカウント
+        existing.monthlyPlays.set(month, (existing.monthlyPlays.get(month) || 0) + 1)
       } else {
+        const monthlyPlays = new Map<number, number>()
+        monthlyPlays.set(month, 1)
         playerMap.set(session.player, {
           org: session.org,
           group: session.group,
@@ -685,7 +709,8 @@ export const useDemoData = () => {
           clearCount: isClear ? 1 : 0,
           totalScore: session.score,
           totalPlayTime: session.playTime,
-          totalSpeechTime: session.speechTime
+          totalSpeechTime: session.speechTime,
+          monthlyPlays
         })
       }
     })
@@ -698,7 +723,15 @@ export const useDemoData = () => {
       clearCount: stats.clearCount,
       avgScore: Math.round(stats.totalScore / stats.totalPlays),
       totalPlayTime: Math.round(stats.totalPlayTime),
-      totalSpeechTime: Math.round(stats.totalSpeechTime)
+      totalSpeechTime: Math.round(stats.totalSpeechTime),
+      // 月別プレイ数
+      playsMay: stats.monthlyPlays.get(5) || 0,
+      playsJun: stats.monthlyPlays.get(6) || 0,
+      playsJul: stats.monthlyPlays.get(7) || 0,
+      playsAug: stats.monthlyPlays.get(8) || 0,
+      playsSep: stats.monthlyPlays.get(9) || 0,
+      playsOct: stats.monthlyPlays.get(10) || 0,
+      playsNov: stats.monthlyPlays.get(11) || 0
     }))
   }
 
@@ -720,6 +753,13 @@ export const useDemoData = () => {
         group: item.group,
         totalScore: item.avgScore * item.totalPlays,
         totalPlays: item.totalPlays,
+        playsMay: item.playsMay,
+        playsJun: item.playsJun,
+        playsJul: item.playsJul,
+        playsAug: item.playsAug,
+        playsSep: item.playsSep,
+        playsOct: item.playsOct,
+        playsNov: item.playsNov,
         clearCount: item.clearCount,
         avgScore: item.avgScore,
         totalPlayTime: item.totalPlayTime,

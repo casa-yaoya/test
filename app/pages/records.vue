@@ -16,25 +16,41 @@
       <div class="summary-content">
         <UCard class="records-card">
           <div class="records-card-header">
-            <div class="records-title">
-              <UIcon name="i-lucide-award" class="records-title-icon" />
-              個人記録
+            <div class="records-header-row">
+              <div class="records-title">
+                <UIcon name="i-lucide-award" class="records-title-icon" />
+                個人詳細
+              </div>
+              <!-- プレイヤー選択プルダウン -->
+              <div class="player-select-wrapper">
+                <USelectMenu
+                  v-model="selectedPlayer"
+                  :items="groupedPlayerOptions"
+                  placeholder="プレイヤーを選択"
+                  class="player-select"
+                  :ui="{
+                    base: 'w-full',
+                    trigger: 'min-w-[240px]'
+                  }"
+                />
+              </div>
             </div>
-            <div class="records-subtitle">コース・レベル・レッスン別の記録一覧</div>
-          </div>
-
-          <!-- 選択中のフィルター表示 -->
-          <div v-if="hasActiveFilters" class="active-filters-bar">
-            <UIcon name="i-lucide-filter" class="filter-bar-icon" />
-            <span class="filter-bar-text">フィルター適用中</span>
+            <div class="records-subtitle">
+              {{ selectedPlayer ? `${selectedPlayer} の記録一覧` : 'プレイヤーを選択してください' }}
+            </div>
           </div>
 
           <!-- コースツリー -->
           <div class="records-tree">
-            <div v-if="personalRecords.length === 0" class="empty-state">
+            <div v-if="!selectedPlayer" class="empty-state">
+              <UIcon name="i-lucide-user" class="empty-icon" />
+              <p class="empty-text">プレイヤーを選択してください</p>
+              <p class="empty-hint">上のプルダウンからプレイヤーを選択すると記録が表示されます</p>
+            </div>
+
+            <div v-else-if="personalRecords.length === 0" class="empty-state">
               <UIcon name="i-lucide-inbox" class="empty-icon" />
               <p class="empty-text">該当するデータがありません</p>
-              <p class="empty-hint">フィルターを調整してみてください</p>
             </div>
 
             <!-- コース（カテゴリー）ループ -->
@@ -57,13 +73,23 @@
               <!-- レベルリスト（カテゴリー開いたら全て表示） -->
               <div v-show="expandedCourses[course.category]" class="level-list">
                 <div v-for="level in course.levels" :key="`${course.category}-${level.level}`" class="level-item">
-                  <!-- レベルラベル（左寄せ小さく表示） -->
-                  <div class="level-label">
+                  <!-- レベルヘッダー（クリックで開閉） -->
+                  <div
+                    class="level-header"
+                    @click="toggleLevel(course.category, level.level)"
+                  >
+                    <UIcon
+                      :name="expandedLevels[`${course.category}-${level.level}`] ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right'"
+                      class="expand-icon"
+                    />
                     <span class="level-badge">Lv.{{ level.level }}</span>
+                    <UBadge color="neutral" variant="subtle" size="xs">
+                      {{ level.lessons.length }}レッスン
+                    </UBadge>
                   </div>
 
-                  <!-- レッスンリスト（常に表示） -->
-                  <div class="lesson-list-nested">
+                  <!-- レッスンリスト -->
+                  <div v-show="expandedLevels[`${course.category}-${level.level}`]" class="lesson-list-nested">
                     <div
                       v-for="lesson in level.lessons"
                       :key="lesson.title"
@@ -122,17 +148,16 @@
                               <UIcon name="i-lucide-trophy" class="best-icon" />
                               <span class="best-label">ベスト</span>
                               <span class="session-score score-excellent">
-                                {{ getBestSession(lesson)!.score }}点
+                                {{ getBestSession(lesson)?.score }}点
                               </span>
-                              <span class="session-time">{{ getBestSession(lesson)!.playTime }}秒</span>
-                              <span class="session-date">{{ formatDateTime(getBestSession(lesson)!.date) }}</span>
-                              <span class="session-player">{{ getBestSession(lesson)!.player }}</span>
+                              <span class="session-time">{{ Math.round(getBestSession(lesson)?.playTime || 0) }}秒</span>
+                              <span class="session-date">{{ formatDateTime(getBestSession(lesson)?.date || new Date()) }}</span>
                             </div>
 
                             <!-- ベストセッション詳細 -->
                             <SessionDetail
                               v-show="expandedSessions[`${lesson.title}-best`]"
-                              :session="getBestSession(lesson)!"
+                              :session="getBestSession(lesson)"
                             />
                           </div>
 
@@ -156,9 +181,8 @@
                               <span class="session-score" :class="getScoreClass(session.score)">
                                 {{ session.score }}点
                               </span>
-                              <span class="session-time">{{ session.playTime }}秒</span>
+                              <span class="session-time">{{ Math.round(session.playTime) }}秒</span>
                               <span class="session-date">{{ formatDateTime(session.date) }}</span>
-                              <span class="session-player">{{ session.player }}</span>
                             </div>
 
                             <!-- セッション詳細 -->
@@ -187,7 +211,7 @@ definePageMeta({
 })
 
 // デモデータ管理
-const { isDataLoaded, loadDemoData, getFilterOptions, getFilteredPersonalRecords } = useDemoData()
+const { isDataLoaded, loadDemoData, getFilterOptions, getFilteredPersonalRecords, allSessions } = useDemoData()
 
 // 現在のフィルター値
 const currentFilters = ref<{
@@ -211,22 +235,112 @@ const handleFilterCollapsed = (collapsed: boolean) => {
   isFilterCollapsed.value = collapsed
 }
 
-// フィルター適用中かどうか
-const hasActiveFilters = computed(() => {
-  return (currentFilters.value.lessons && currentFilters.value.lessons.length > 0) ||
-    (currentFilters.value.levels && currentFilters.value.levels.length > 0) ||
-    (currentFilters.value.players && currentFilters.value.players.length > 0) ||
-    currentFilters.value.dateFrom !== null ||
-    currentFilters.value.dateTo !== null
+// プレイヤー選択
+const selectedPlayer = ref<string | null>(null)
+
+// フィルター適用後のプレイヤーリストを取得
+const filteredPlayers = computed(() => {
+  let sessions = [...allSessions.value]
+
+  // レベルフィルター
+  if (currentFilters.value.levels && currentFilters.value.levels.length > 0) {
+    const levelSet = new Set(currentFilters.value.levels)
+    sessions = sessions.filter(s => levelSet.has(s.level))
+  }
+
+  // レッスンフィルター
+  if (currentFilters.value.lessons && currentFilters.value.lessons.length > 0) {
+    const lessonSet = new Set(currentFilters.value.lessons)
+    sessions = sessions.filter(s => lessonSet.has(s.lesson))
+  }
+
+  // 日付フィルター
+  if (currentFilters.value.dateFrom) {
+    const fromDate = new Date(currentFilters.value.dateFrom)
+    fromDate.setHours(0, 0, 0, 0)
+    sessions = sessions.filter(s => s.date >= fromDate)
+  }
+  if (currentFilters.value.dateTo) {
+    const toDate = new Date(currentFilters.value.dateTo)
+    toDate.setHours(23, 59, 59, 999)
+    sessions = sessions.filter(s => s.date <= toDate)
+  }
+
+  // フィルター適用後のユニークプレイヤーとグループ情報を収集
+  const playerGroupMap = new Map<string, { account: string; group: string }>()
+  sessions.forEach(s => {
+    if (!playerGroupMap.has(s.player)) {
+      playerGroupMap.set(s.player, { account: s.account, group: s.group })
+    }
+  })
+
+  return playerGroupMap
+})
+
+// グループ別プレイヤーオプション（フィルター適用後）
+const groupedPlayerOptions = computed(() => {
+  const playerGroupMap = filteredPlayers.value
+  const result: { label: string; value: string }[] = []
+
+  // グループごとにプレイヤーを整理
+  const groupPlayersMap = new Map<string, string[]>()
+  playerGroupMap.forEach((info, player) => {
+    const group = info.group
+    if (!groupPlayersMap.has(group)) {
+      groupPlayersMap.set(group, [])
+    }
+    groupPlayersMap.get(group)!.push(player)
+  })
+
+  // グループ名でソート
+  const sortedGroups = Array.from(groupPlayersMap.keys()).sort()
+
+  sortedGroups.forEach(group => {
+    const players = groupPlayersMap.get(group)!.sort()
+    if (players.length > 0) {
+      // グループヘッダーを追加
+      result.push({
+        label: `── ${group} ──`,
+        value: `__group__${group}`,
+        disabled: true
+      } as any)
+      // プレイヤーを追加
+      players.forEach(player => {
+        result.push({
+          label: `　${player}`,
+          value: player
+        })
+      })
+    }
+  })
+
+  return result
+})
+
+// 最初のプレイヤーを取得
+const firstPlayer = computed(() => {
+  const options = groupedPlayerOptions.value
+  const firstPlayerOption = options.find(opt => !opt.value.startsWith('__group__'))
+  return firstPlayerOption?.value || null
 })
 
 // 展開状態
 const expandedCourses = reactive<Record<string, boolean>>({})
+const expandedLevels = reactive<Record<string, boolean>>({})
 const expandedLessons = reactive<Record<string, boolean>>({})
 const expandedSessions = reactive<Record<string, boolean>>({})
 
-// 個人記録データ
-const personalRecords = computed(() => getFilteredPersonalRecords(currentFilters.value))
+// 個人記録データ（選択されたプレイヤーとフィルターを適用）
+const personalRecords = computed(() => {
+  if (!selectedPlayer.value) return []
+  return getFilteredPersonalRecords({
+    players: [selectedPlayer.value],
+    lessons: currentFilters.value.lessons,
+    levels: currentFilters.value.levels,
+    dateFrom: currentFilters.value.dateFrom,
+    dateTo: currentFilters.value.dateTo
+  })
+})
 
 // フィルター更新ハンドラ
 const handleFiltersUpdate = (filters: {
@@ -237,7 +351,28 @@ const handleFiltersUpdate = (filters: {
   dateTo: Date | null
 }) => {
   currentFilters.value = filters
+
+  // フィルター変更時、選択中のプレイヤーがリストに存在しない場合はリセット
+  if (selectedPlayer.value) {
+    const availablePlayers = filteredPlayers.value
+    if (!availablePlayers.has(selectedPlayer.value)) {
+      // 新しいリストの最初のプレイヤーを選択
+      selectedPlayer.value = firstPlayer.value
+    }
+  }
 }
+
+// データ変更時に全て展開
+watch(personalRecords, (newRecords) => {
+  // コースを全て展開
+  newRecords.forEach(course => {
+    expandedCourses[course.category] = true
+    // レベルも全て展開
+    course.levels.forEach(level => {
+      expandedLevels[`${course.category}-${level.level}`] = true
+    })
+  })
+}, { immediate: true })
 
 // レッスン数をカウント
 const getLessonCount = (course: { levels: { lessons: any[] }[] }) => {
@@ -247,6 +382,11 @@ const getLessonCount = (course: { levels: { lessons: any[] }[] }) => {
 // 展開トグル
 const toggleCourse = (category: string) => {
   expandedCourses[category] = !expandedCourses[category]
+}
+
+const toggleLevel = (category: string, level: string) => {
+  const key = `${category}-${level}`
+  expandedLevels[key] = !expandedLevels[key]
 }
 
 const toggleLesson = (title: string) => {
@@ -297,6 +437,19 @@ onMounted(async () => {
       console.error('デモデータの読み込みに失敗しました:', error)
     }
   }
+
+  // データ読み込み後、最初のプレイヤーを選択
+  await nextTick()
+  if (firstPlayer.value && !selectedPlayer.value) {
+    selectedPlayer.value = firstPlayer.value
+  }
+})
+
+// データ読み込み後に最初のプレイヤーを選択
+watch(isDataLoaded, (loaded) => {
+  if (loaded && firstPlayer.value && !selectedPlayer.value) {
+    selectedPlayer.value = firstPlayer.value
+  }
 })
 </script>
 
@@ -317,6 +470,13 @@ onMounted(async () => {
   border-bottom: 1px solid var(--ui-border);
 }
 
+.records-header-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
 .records-title {
   display: flex;
   align-items: center;
@@ -324,7 +484,6 @@ onMounted(async () => {
   font-size: 15px;
   font-weight: 600;
   color: var(--ui-text-highlighted);
-  margin-bottom: 4px;
 }
 
 .records-title-icon {
@@ -332,33 +491,19 @@ onMounted(async () => {
   color: #f59e0b;
 }
 
+.player-select-wrapper {
+  flex: 1;
+  max-width: 300px;
+}
+
+.player-select {
+  width: 100%;
+}
+
 .records-subtitle {
   font-size: 12px;
   color: var(--ui-text-muted);
-  margin-left: 28px;
-}
-
-/* アクティブフィルターバー */
-.active-filters-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
-  background: rgba(14, 165, 233, 0.08);
-  border: 1px solid rgba(14, 165, 233, 0.2);
-  border-radius: var(--ui-radius);
-  margin-bottom: 16px;
-}
-
-.filter-bar-icon {
-  font-size: 14px;
-  color: #0ea5e9;
-}
-
-.filter-bar-text {
-  font-size: 12px;
-  font-weight: 500;
-  color: #0284c7;
+  margin-top: 8px;
 }
 
 /* 空の状態 */
@@ -440,32 +585,44 @@ onMounted(async () => {
 }
 
 .level-item {
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .level-item:last-child {
   margin-bottom: 0;
 }
 
-/* レベルラベル（左寄せ小さく表示） */
-.level-label {
-  padding: 4px 0 6px 0;
+/* レベルヘッダー */
+.level-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--ui-bg-elevated);
+  border-radius: var(--ui-radius);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.level-header:hover {
+  background: var(--ui-bg-accented);
 }
 
 .level-badge {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: #8b5cf6;
   background: rgba(139, 92, 246, 0.1);
-  padding: 2px 8px;
+  padding: 2px 10px;
   border-radius: 4px;
 }
 
 /* レッスンリスト（ネスト構造） */
 .lesson-list-nested {
-  padding: 0 0 4px 16px;
+  padding: 8px 0 4px 20px;
   border-left: 2px solid rgba(139, 92, 246, 0.2);
-  margin-left: 4px;
+  margin-left: 8px;
+  margin-top: 8px;
 }
 
 .lesson-item {
@@ -638,12 +795,6 @@ onMounted(async () => {
   min-width: 130px;
 }
 
-.session-player {
-  flex: 1;
-  color: var(--ui-text);
-  font-weight: 500;
-}
-
 .session-score {
   font-weight: 600;
   min-width: 50px;
@@ -660,6 +811,17 @@ onMounted(async () => {
    レスポンシブ
    ======================================== */
 @media (max-width: 768px) {
+  .records-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .player-select-wrapper {
+    width: 100%;
+    max-width: none;
+  }
+
   .lesson-scores {
     flex-direction: column;
     gap: 4px;
@@ -678,12 +840,6 @@ onMounted(async () => {
   .session-date {
     min-width: auto;
   }
-
-  .session-player {
-    width: 100%;
-    order: -1;
-    margin-bottom: 4px;
-  }
 }
 
 @media (max-width: 480px) {
@@ -701,10 +857,6 @@ onMounted(async () => {
   }
 
   .level-list {
-    padding-left: 16px;
-  }
-
-  .lesson-list {
     padding-left: 16px;
   }
 

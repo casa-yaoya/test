@@ -24,12 +24,17 @@
 
     <!-- 右側のユーザーメニュー -->
     <div class="header-right">
-      <div class="user-info">
+      <UButton
+        variant="ghost"
+        color="neutral"
+        class="user-info-btn"
+        @click="navigateToPrompts"
+      >
         <div class="user-avatar">
           <UIcon name="i-lucide-user" class="avatar-icon" />
         </div>
         <span class="user-name">管理者</span>
-      </div>
+      </UButton>
       <UButton
         icon="i-lucide-log-out"
         variant="ghost"
@@ -43,10 +48,15 @@
 </template>
 
 <script setup lang="ts">
+const router = useRouter()
 const isSidebarOpen = useState<boolean>('isSidebarOpen', () => false)
 
 const toggleSidebar = () => {
   isSidebarOpen.value = !isSidebarOpen.value
+}
+
+const navigateToPrompts = () => {
+  router.push('/prompts')
 }
 </script>
 
@@ -106,7 +116,7 @@ const toggleSidebar = () => {
   gap: 12px;
 }
 
-.user-info {
+.user-info-btn {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -114,6 +124,13 @@ const toggleSidebar = () => {
   background: #f8fafc;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.user-info-btn:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
 }
 
 .user-avatar {
@@ -169,7 +186,7 @@ const toggleSidebar = () => {
     display: none;
   }
 
-  .user-info {
+  .user-info-btn {
     display: none;
   }
 }

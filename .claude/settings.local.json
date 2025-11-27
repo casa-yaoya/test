@@ -36,7 +36,10 @@
       "Bash(where gh:*)",
       "Bash(winget install:*)",
       "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" --version)",
-      "Bash(\"/c/Users/naoya/AppData/Local/Programs/GitHub CLI/gh.exe\" --version)"
+      "Bash(\"/c/Users/naoya/AppData/Local/Programs/GitHub CLI/gh.exe\" --version)",
+      "Bash(ipconfig:*)",
+      "Bash(ip addr:*)",
+      "Bash(cmd //c \"taskkill /F /IM node.exe\")"
     ],
     "deny": [],
     "ask": []

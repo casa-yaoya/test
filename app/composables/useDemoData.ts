@@ -506,9 +506,15 @@ export const useDemoData = () => {
       }
     })
 
+    // レベル番号でソートするためのヘルパー関数
+    const extractLevelNum = (levelStr: string): number => {
+      const match = levelStr.match(/Lv\.(\d+)/)
+      return match ? parseInt(match[1], 10) : 0
+    }
+
     return Array.from(aggregateMap.entries()).map(([key, stats]) => {
-      // 表示用のレベルとレッスン（改行区切り）
-      const levelsArray = Array.from(stats.levels).sort()
+      // 表示用のレベルとレッスン（改行区切り）- レベルは数値順にソート
+      const levelsArray = Array.from(stats.levels).sort((a, b) => extractLevelNum(a) - extractLevelNum(b))
       const lessonsArray = Array.from(stats.lessons).sort()
 
       let levelDisplay: string
@@ -555,7 +561,31 @@ export const useDemoData = () => {
         bestScore: stats.bestScore,
         totalPlayTime: stats.totalPlayTime,
         avgPlayTime: Math.round(stats.totalPlayTime / stats.playCount),
-        bestScorer
+        bestScorer,
+        // ソート用に元のキーを保持
+        _sortKey: key
+      }
+    }).sort((a, b) => {
+      // 表示単位に応じてソート
+      if (unit === 'level') {
+        // レベル単位：カテゴリー名順、その中でレベル番号順
+        const catCompare = a.category.localeCompare(b.category, 'ja')
+        if (catCompare !== 0) return catCompare
+        // レベル番号を抽出して比較
+        const aLevel = extractLevelNum(a.levelDisplay)
+        const bLevel = extractLevelNum(b.levelDisplay)
+        return aLevel - bLevel
+      } else if (unit === 'category') {
+        // カテゴリー単位：カテゴリー名順
+        return a.category.localeCompare(b.category, 'ja')
+      } else {
+        // レッスン単位：カテゴリー名順、レベル順、レッスン名順
+        const catCompare = a.category.localeCompare(b.category, 'ja')
+        if (catCompare !== 0) return catCompare
+        const aLevel = extractLevelNum(a.levelDisplay)
+        const bLevel = extractLevelNum(b.levelDisplay)
+        if (aLevel !== bLevel) return aLevel - bLevel
+        return a.lessonDisplay.localeCompare(b.lessonDisplay, 'ja')
       }
     })
   }

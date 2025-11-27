@@ -196,7 +196,7 @@
                   <th v-if="visibleColumns.bestScore">ベスト</th>
                   <th v-if="visibleColumns.totalPlayTime">累計時間</th>
                   <th v-if="visibleColumns.avgPlayTime">平均時間</th>
-                  <th v-if="visibleColumns.bestScorer">最高点</th>
+                  <th v-if="visibleColumns.bestScorer">ベストスコアラー</th>
                 </tr>
               </thead>
               <tbody>
@@ -394,7 +394,7 @@ const columnDefinitions = [
   { key: 'bestScore', label: 'ベスト' },
   { key: 'totalPlayTime', label: '累計時間' },
   { key: 'avgPlayTime', label: '平均時間' },
-  { key: 'bestScorer', label: '最高点' }
+  { key: 'bestScorer', label: 'ベストスコアラー' }
 ]
 
 // 列の表示状態

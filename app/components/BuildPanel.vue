@@ -795,8 +795,8 @@ watch(() => props.selectedCharacter, (newVal) => {
   gap: 16px;
   background: white;
   border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  padding: 12px;
+  border-radius: 12px;
+  padding: 14px;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 
@@ -806,10 +806,10 @@ watch(() => props.selectedCharacter, (newVal) => {
 }
 
 .character-avatar {
-  width: 80px;
-  height: 80px;
+  width: 100px;
+  height: 100px;
   background: linear-gradient(135deg, #f3e8ff 0%, #ede9fe 100%);
-  border-radius: 10px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;

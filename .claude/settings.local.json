@@ -30,7 +30,13 @@
       "Bash(cat:*)",
       "Bash(node -e:*)",
       "Bash(timeout:*)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(npx wrangler:*)",
+      "Bash(gh repo view:*)",
+      "Bash(where gh:*)",
+      "Bash(winget install:*)",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" --version)",
+      "Bash(\"/c/Users/naoya/AppData/Local/Programs/GitHub CLI/gh.exe\" --version)"
     ],
     "deny": [],
     "ask": []

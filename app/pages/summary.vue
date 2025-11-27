@@ -337,7 +337,7 @@ const summaryData = ref<any[]>([])
 const displayUnitOptions = [
   { label: 'レッスン', value: 'lesson' },
   { label: 'レベル', value: 'level' },
-  { label: 'カテゴリー', value: 'category' }
+  { label: 'コース', value: 'category' }
 ]
 
 const chartCompareAxisOptions = [
@@ -503,6 +503,20 @@ watch(summaryDisplayUnit, () => {
 
 // CSVダウンロード
 const downloadCSV = () => {
+  // 展開されている行があるかチェック
+  const hasExpandedRows = Object.values(expandedRows).some(v => v)
+
+  if (hasExpandedRows) {
+    // 展開されている行のプレイヤー詳細も含めたCSVを生成
+    downloadCSVWithPlayerDetails()
+  } else {
+    // 通常のサマリーCSVを生成
+    downloadSummaryOnlyCSV()
+  }
+}
+
+// サマリーのみのCSVダウンロード
+const downloadSummaryOnlyCSV = () => {
   const headers = columnDefinitions
     .filter(col => visibleColumns[col.key])
     .map(col => col.label)
@@ -535,6 +549,79 @@ const downloadCSV = () => {
   const link = document.createElement('a')
   link.href = url
   link.download = `summary_${new Date().toISOString().split('T')[0]}.csv`
+  link.click()
+  URL.revokeObjectURL(url)
+}
+
+// プレイヤー詳細を含むCSVダウンロード
+const downloadCSVWithPlayerDetails = () => {
+  // 表示単位のラベルを取得
+  const unitLabel = summaryDisplayUnit.value === 'lesson' ? 'レッスン'
+    : summaryDisplayUnit.value === 'level' ? 'レベル'
+    : 'コース'
+
+  // ヘッダー：表示単位、アカウント、グループ、プレイヤー、各種統計
+  const headers = [unitLabel, 'アカウント', 'グループ', 'プレイヤー', 'プレイ数', 'クリア数', '平均', 'ベスト', '累計時間', '平均時間']
+
+  const rows: string[][] = []
+
+  summaryData.value.forEach((item: any, index: number) => {
+    const rowKey = getRowKey(item)
+    const isExpanded = expandedRows[index]
+
+    // 表示単位の値を取得
+    const unitValue = summaryDisplayUnit.value === 'lesson' ? item.lessonDisplay
+      : summaryDisplayUnit.value === 'level' ? `${item.category} ${item.levelDisplay}`
+      : item.category
+
+    if (isExpanded && playerStatsCache[rowKey]) {
+      // 展開されている行：プレイヤー詳細を出力
+      const playerData = playerStatsCache[rowKey]
+      playerData.forEach((accountData: any) => {
+        accountData.groups.forEach((groupData: any) => {
+          groupData.players.forEach((player: any) => {
+            rows.push([
+              unitValue,
+              accountData.account,
+              groupData.group,
+              player.player,
+              String(player.playCount),
+              String(player.clearCount),
+              `${player.avgScore}点`,
+              `${player.bestScore}点`,
+              formatTime(player.totalPlayTime),
+              formatTime(player.avgPlayTime)
+            ])
+          })
+        })
+      })
+    } else {
+      // 展開されていない行：サマリー行のみ出力（プレイヤー列は空）
+      rows.push([
+        unitValue,
+        '',
+        '',
+        '(集計)',
+        String(item.playCount),
+        String(item.clearCount || 0),
+        `${item.avgScore}点`,
+        `${item.bestScore}点`,
+        formatTime(item.totalPlayTime),
+        formatTime(item.avgPlayTime)
+      ])
+    }
+  })
+
+  const csvContent = [
+    headers.join(','),
+    ...rows.map(row => row.map(cell => `"${String(cell).replace(/\n/g, ' ')}"`).join(','))
+  ].join('\n')
+
+  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `summary_with_players_${new Date().toISOString().split('T')[0]}.csv`
   link.click()
   URL.revokeObjectURL(url)
 }

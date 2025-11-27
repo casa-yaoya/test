@@ -397,7 +397,11 @@ export const useDemoData = () => {
     }
 
     // レベルフィルター（複数 - レベルで絞り込み機能）
-    if (filters.levels && filters.levels.length > 0) {
+    // undefined = 全選択（フィルターなし）、空配列 = 何も選択されていない（0件）
+    if (filters.levels !== undefined) {
+      if (filters.levels.length === 0) {
+        return [] // 何も選択されていない場合は空の結果
+      }
       const levelSet = new Set(filters.levels)
       filtered = filtered.filter(s => levelSet.has(s.level))
     }
@@ -408,13 +412,21 @@ export const useDemoData = () => {
     }
 
     // レッスンフィルター（複数）
-    if (filters.lessons && filters.lessons.length > 0) {
+    // undefined = 全選択（フィルターなし）、空配列 = 何も選択されていない（0件）
+    if (filters.lessons !== undefined) {
+      if (filters.lessons.length === 0) {
+        return [] // 何も選択されていない場合は空の結果
+      }
       const lessonSet = new Set(filters.lessons)
       filtered = filtered.filter(s => lessonSet.has(s.lesson))
     }
 
     // プレイヤーフィルター
-    if (filters.players && filters.players.length > 0) {
+    // undefined = 全選択（フィルターなし）、空配列 = 何も選択されていない（0件）
+    if (filters.players !== undefined) {
+      if (filters.players.length === 0) {
+        return [] // 何も選択されていない場合は空の結果
+      }
       const playerSet = new Set(filters.players)
       filtered = filtered.filter(s => playerSet.has(s.player))
     }

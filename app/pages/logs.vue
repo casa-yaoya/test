@@ -95,7 +95,7 @@
                     <span class="th-content">プレイヤー<span class="sort-icon">{{ getSortIcon('player') }}</span></span>
                   </th>
                   <th v-if="visibleColumns.category" class="sortable" :class="{ sorted: sortState.column === 'category' }" @click="toggleSort('category')">
-                    <span class="th-content">カテゴリー<span class="sort-icon">{{ getSortIcon('category') }}</span></span>
+                    <span class="th-content">コース<span class="sort-icon">{{ getSortIcon('category') }}</span></span>
                   </th>
                   <th v-if="visibleColumns.level" class="sortable" :class="{ sorted: sortState.column === 'level' }" @click="toggleSort('level')">
                     <span class="th-content">レベル<span class="sort-icon">{{ getSortIcon('level') }}</span></span>
@@ -232,7 +232,7 @@ const columnDefinitions = [
   { key: 'account', label: 'アカウント' },
   { key: 'group', label: 'グループ' },
   { key: 'player', label: 'プレイヤー' },
-  { key: 'category', label: 'カテゴリー' },
+  { key: 'category', label: 'コース' },
   { key: 'level', label: 'レベル' },
   { key: 'lesson', label: 'レッスン' },
   { key: 'score', label: 'スコア' },

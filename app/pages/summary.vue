@@ -136,6 +136,15 @@
                   class="min-w-[120px]"
                 />
               </div>
+              <UButton
+                :variant="isAllExpanded ? 'solid' : 'outline'"
+                :color="isAllExpanded ? 'primary' : 'neutral'"
+                size="sm"
+                :icon="isAllExpanded ? 'i-lucide-chevrons-up' : 'i-lucide-users'"
+                @click="toggleAllRows"
+              >
+                {{ isAllExpanded ? '全プレイヤー非表示' : '全プレイヤー表示' }}
+              </UButton>
             </div>
             <div class="table-actions">
               <UButton
@@ -194,18 +203,95 @@
                 <tr v-if="summaryData.length === 0">
                   <td :colspan="visibleColumnCount" class="text-center text-gray-600">データがありません</td>
                 </tr>
-                <tr v-for="(item, index) in summaryData" :key="index">
-                  <td v-if="visibleColumns.category">{{ item.category }}</td>
-                  <td v-if="visibleColumns.level" class="whitespace-pre-line">{{ item.levelDisplay }}</td>
-                  <td v-if="visibleColumns.lesson" class="whitespace-pre-line">{{ item.lessonDisplay }}</td>
-                  <td v-if="visibleColumns.playCount">{{ item.playCount }}回</td>
-                  <td v-if="visibleColumns.clearCount">{{ item.clearCount || 0 }}回</td>
-                  <td v-if="visibleColumns.avgScore">{{ item.avgScore }}点</td>
-                  <td v-if="visibleColumns.bestScore">{{ item.bestScore }}点</td>
-                  <td v-if="visibleColumns.totalPlayTime">{{ formatTime(item.totalPlayTime) }}</td>
-                  <td v-if="visibleColumns.avgPlayTime">{{ formatTime(item.avgPlayTime) }}</td>
-                  <td v-if="visibleColumns.bestScorer">{{ item.bestScorer || '-' }}</td>
-                </tr>
+                <template v-for="(item, index) in summaryData" :key="index">
+                  <tr
+                    class="summary-row"
+                    :class="{ 'expanded': expandedRows[index] }"
+                    @click="toggleRow(index)"
+                  >
+                    <td v-if="visibleColumns.category">
+                      <UIcon
+                        :name="expandedRows[index] ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right'"
+                        class="expand-icon"
+                      />
+                      {{ item.category }}
+                    </td>
+                    <td v-if="visibleColumns.level" class="whitespace-pre-line">{{ item.levelDisplay }}</td>
+                    <td v-if="visibleColumns.lesson" class="whitespace-pre-line">{{ item.lessonDisplay }}</td>
+                    <td v-if="visibleColumns.playCount">{{ item.playCount }}回</td>
+                    <td v-if="visibleColumns.clearCount">{{ item.clearCount || 0 }}回</td>
+                    <td v-if="visibleColumns.avgScore">{{ item.avgScore }}点</td>
+                    <td v-if="visibleColumns.bestScore">{{ item.bestScore }}点</td>
+                    <td v-if="visibleColumns.totalPlayTime">{{ formatTime(item.totalPlayTime) }}</td>
+                    <td v-if="visibleColumns.avgPlayTime">{{ formatTime(item.avgPlayTime) }}</td>
+                    <td v-if="visibleColumns.bestScorer">{{ item.bestScorer || '-' }}</td>
+                  </tr>
+                  <!-- プレイヤー別詳細行 -->
+                  <tr v-show="expandedRows[index]" class="detail-row">
+                    <td :colspan="visibleColumnCount">
+                      <div class="player-detail-container">
+                        <div class="player-detail-content">
+                          <template v-if="playerStatsCache[getRowKey(item)]">
+                            <table class="player-table">
+                              <thead>
+                                <tr>
+                                  <th>アカウント</th>
+                                  <th>グループ</th>
+                                  <th>プレイヤー</th>
+                                  <th>プレイ数</th>
+                                  <th>クリア数</th>
+                                  <th>平均</th>
+                                  <th>ベスト</th>
+                                  <th>累計時間</th>
+                                  <th>平均時間</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <template
+                                  v-for="accountData in playerStatsCache[getRowKey(item)]"
+                                  :key="accountData.account"
+                                >
+                                  <template
+                                    v-for="(groupData, groupIndex) in accountData.groups"
+                                    :key="`${accountData.account}-${groupData.group}`"
+                                  >
+                                    <tr
+                                      v-for="(player, playerIndex) in groupData.players"
+                                      :key="player.player"
+                                      :class="{ 'no-record': player.playCount === 0 }"
+                                    >
+                                      <td :class="{ 'group-first-row': playerIndex === 0 && groupIndex === 0 }">
+                                        <template v-if="playerIndex === 0 && groupIndex === 0">
+                                          {{ accountData.account }}
+                                        </template>
+                                      </td>
+                                      <td :class="{ 'group-first-row': playerIndex === 0 }">
+                                        <template v-if="playerIndex === 0">
+                                          {{ groupData.group }}
+                                        </template>
+                                      </td>
+                                      <td>{{ player.player }}</td>
+                                      <td>{{ player.playCount }}回</td>
+                                      <td>{{ player.clearCount }}回</td>
+                                      <td>{{ player.avgScore }}点</td>
+                                      <td>{{ player.bestScore }}点</td>
+                                      <td>{{ formatTime(player.totalPlayTime) }}</td>
+                                      <td>{{ formatTime(player.avgPlayTime) }}</td>
+                                    </tr>
+                                  </template>
+                                </template>
+                              </tbody>
+                            </table>
+                          </template>
+                          <div v-else class="loading-players">
+                            <UIcon name="i-lucide-loader-2" class="loading-icon" />
+                            読み込み中...
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                </template>
               </tbody>
             </table>
           </div>
@@ -228,7 +314,8 @@ const {
   getComparisonTrendData,
   getFilterOptions,
   getFilteredSummaryData,
-  getFilteredAggregatedStats
+  getFilteredAggregatedStats,
+  getPlayerStatsForSummaryRow
 } = useDemoData()
 
 // 現在のフィルター値
@@ -333,6 +420,86 @@ const visibleColumnCount = computed(() => {
 const toggleColumn = (key: string) => {
   visibleColumns[key] = !visibleColumns[key]
 }
+
+// 行の展開状態
+const expandedRows = reactive<Record<number, boolean>>({})
+
+// プレイヤー統計データのキャッシュ
+const playerStatsCache = reactive<Record<string, any>>({})
+
+// 全行展開状態
+const isAllExpanded = computed(() => {
+  if (summaryData.value.length === 0) return false
+  return summaryData.value.every((_, index) => expandedRows[index])
+})
+
+// 行のキーを取得（表示単位に応じて）
+const getRowKey = (item: any): string => {
+  switch (summaryDisplayUnit.value) {
+    case 'lesson':
+      return item.lessonDisplay
+    case 'level':
+      return `${item.category}|${item.levelDisplay}`
+    case 'category':
+      return item.category
+    default:
+      return item.lessonDisplay
+  }
+}
+
+// 行の展開トグル
+const toggleRow = (index: number) => {
+  const isExpanding = !expandedRows[index]
+  expandedRows[index] = isExpanding
+
+  // 展開時にプレイヤー統計データを取得
+  if (isExpanding) {
+    const item = summaryData.value[index]
+    const rowKey = getRowKey(item)
+
+    // キャッシュにない場合は取得
+    if (!playerStatsCache[rowKey]) {
+      const stats = getPlayerStatsForSummaryRow(
+        summaryDisplayUnit.value,
+        rowKey,
+        currentFilters.value
+      )
+      playerStatsCache[rowKey] = stats
+    }
+  }
+}
+
+// 全行の展開/折りたたみトグル
+const toggleAllRows = () => {
+  const shouldExpand = !isAllExpanded.value
+
+  summaryData.value.forEach((item, index) => {
+    expandedRows[index] = shouldExpand
+
+    // 展開時にプレイヤー統計データを取得
+    if (shouldExpand) {
+      const rowKey = getRowKey(item)
+      if (!playerStatsCache[rowKey]) {
+        const stats = getPlayerStatsForSummaryRow(
+          summaryDisplayUnit.value,
+          rowKey,
+          currentFilters.value
+        )
+        playerStatsCache[rowKey] = stats
+      }
+    }
+  })
+}
+
+// 表示単位変更時にキャッシュをクリア
+watch(summaryDisplayUnit, () => {
+  Object.keys(playerStatsCache).forEach(key => {
+    delete playerStatsCache[key]
+  })
+  Object.keys(expandedRows).forEach(key => {
+    delete expandedRows[Number(key)]
+  })
+})
 
 // CSVダウンロード
 const downloadCSV = () => {
@@ -1041,5 +1208,159 @@ onMounted(async () => {
     font-size: 10px;
     padding: 3px 6px;
   }
+}
+
+/* ========================================
+   行展開機能
+   ======================================== */
+.summary-row {
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.summary-row:hover {
+  background: var(--ui-bg-elevated);
+}
+
+.summary-row.expanded {
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.summary-row td:first-child {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.expand-icon {
+  font-size: 12px;
+  color: var(--ui-text-dimmed);
+  flex-shrink: 0;
+}
+
+.summary-row.expanded .expand-icon {
+  color: #10b981;
+}
+
+.detail-row {
+  background: var(--ui-bg-muted);
+}
+
+.detail-row td {
+  padding: 0 !important;
+  border-top: none;
+}
+
+/* プレイヤー詳細コンテナ */
+.player-detail-container {
+  margin-left: 24px;
+  padding: 16px;
+  background: rgba(16, 185, 129, 0.04);
+  border-left: 3px solid #10b981;
+  border-radius: 0 var(--ui-radius) var(--ui-radius) 0;
+}
+
+.player-detail-content {
+  display: flex;
+  flex-direction: column;
+}
+
+/* プレイヤーテーブル */
+.player-table {
+  width: 100%;
+  font-size: 12px;
+  border-collapse: collapse;
+  background: var(--ui-bg);
+  border-radius: var(--ui-radius);
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.player-table th,
+.player-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.player-table th {
+  background: linear-gradient(to bottom, var(--ui-bg-elevated), var(--ui-bg-accented));
+  font-weight: 600;
+  color: var(--ui-text-muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* Account/Group列の幅制限とテキスト省略 */
+.player-table th:nth-child(1),
+.player-table td:nth-child(1),
+.player-table th:nth-child(2),
+.player-table td:nth-child(2) {
+  max-width: 100px;
+  width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* プレイヤー名の列 */
+.player-table th:nth-child(3),
+.player-table td:nth-child(3) {
+  max-width: 120px;
+  width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player-table tbody tr {
+  transition: background 0.1s ease;
+}
+
+.player-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.player-table tbody tr:hover {
+  background: rgba(16, 185, 129, 0.06);
+}
+
+/* 記録なしの行 */
+.player-table tr.no-record {
+  opacity: 0.6;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.player-table tr.no-record td {
+  color: var(--ui-text-dimmed);
+  font-style: italic;
+}
+
+/* グループの区切り（アカウント・グループが表示される最初の行） */
+.player-table td.group-first-row {
+  font-weight: 600;
+  color: var(--ui-text-highlighted);
+}
+
+/* ローディング表示 */
+.loading-players {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  color: var(--ui-text-muted);
+  font-size: 13px;
+}
+
+.loading-icon {
+  font-size: 16px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 </style>

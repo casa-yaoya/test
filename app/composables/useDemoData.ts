@@ -562,19 +562,31 @@ export const useDemoData = () => {
     let filtered = [...sessions]
 
     // レベルフィルター（複数）
-    if (filters.levels && filters.levels.length > 0) {
+    // undefined = 全選択（フィルターなし）、空配列 = 何も選択されていない（0件）
+    if (filters.levels !== undefined) {
+      if (filters.levels.length === 0) {
+        return [] // 何も選択されていない場合は空の結果
+      }
       const levelSet = new Set(filters.levels)
       filtered = filtered.filter(s => levelSet.has(s.level))
     }
 
     // レッスンフィルター（複数）
-    if (filters.lessons && filters.lessons.length > 0) {
+    // undefined = 全選択（フィルターなし）、空配列 = 何も選択されていない（0件）
+    if (filters.lessons !== undefined) {
+      if (filters.lessons.length === 0) {
+        return [] // 何も選択されていない場合は空の結果
+      }
       const lessonSet = new Set(filters.lessons)
       filtered = filtered.filter(s => lessonSet.has(s.lesson))
     }
 
     // プレイヤーフィルター
-    if (filters.players && filters.players.length > 0) {
+    // undefined = 全選択（フィルターなし）、空配列 = 何も選択されていない（0件）
+    if (filters.players !== undefined) {
+      if (filters.players.length === 0) {
+        return [] // 何も選択されていない場合は空の結果
+      }
       const playerSet = new Set(filters.players)
       filtered = filtered.filter(s => playerSet.has(s.player))
     }
@@ -1345,6 +1357,179 @@ export const useDemoData = () => {
     return result
   }
 
+  // サマリー行展開用のプレイヤー別集計データを取得
+  // Account > Group > Player の入れ子構造で返す
+  const getPlayerStatsForSummaryRow = (
+    unit: 'lesson' | 'level' | 'category',
+    rowKey: string, // レッスン名、レベル（カテゴリー|Lv.X）、カテゴリー名
+    filters: {
+      lessons?: string[]
+      levels?: string[]
+      players?: string[]
+      dateFrom?: Date | null
+      dateTo?: Date | null
+    }
+  ) => {
+    // フィルターを適用
+    let filtered = applyFilters(allSessions.value, filters)
+
+    // rowKeyに基づいてさらにフィルタリング
+    switch (unit) {
+      case 'lesson':
+        filtered = filtered.filter(s => s.lesson === rowKey)
+        break
+      case 'level':
+        // rowKeyは「カテゴリー|Lv.X」形式
+        const [category, levelPart] = rowKey.split('|')
+        const levelNum = levelPart?.replace('Lv.', '')
+        filtered = filtered.filter(s => s.category === category && s.level === levelNum)
+        break
+      case 'category':
+        filtered = filtered.filter(s => s.category === rowKey)
+        break
+    }
+
+    // 全ユニークプレイヤーを取得（フィルター適用後のデータから）
+    const allPlayersFromFiltered = applyFilters(allSessions.value, filters)
+    const allPlayersSet = new Set<string>()
+    const playerInfo = new Map<string, { account: string; group: string }>()
+
+    allPlayersFromFiltered.forEach(session => {
+      allPlayersSet.add(session.player)
+      if (!playerInfo.has(session.player)) {
+        playerInfo.set(session.player, {
+          account: session.account,
+          group: session.group
+        })
+      }
+    })
+
+    // プレイヤーごとの集計
+    const playerStats = new Map<string, {
+      playCount: number
+      clearCount: number
+      totalScore: number
+      bestScore: number
+      totalPlayTime: number
+      avgPlayTime: number
+    }>()
+
+    filtered.forEach(session => {
+      const existing = playerStats.get(session.player)
+      const isClear = session.score >= 70
+
+      if (existing) {
+        existing.playCount++
+        if (isClear) existing.clearCount++
+        existing.totalScore += session.score
+        if (session.score > existing.bestScore) {
+          existing.bestScore = session.score
+        }
+        existing.totalPlayTime += session.playTime
+      } else {
+        playerStats.set(session.player, {
+          playCount: 1,
+          clearCount: isClear ? 1 : 0,
+          totalScore: session.score,
+          bestScore: session.score,
+          totalPlayTime: session.playTime,
+          avgPlayTime: 0
+        })
+      }
+    })
+
+    // 全プレイヤーのデータを構築（記録がないプレイヤーは0で埋める）
+    const allPlayersList: {
+      player: string
+      account: string
+      group: string
+      playCount: number
+      clearCount: number
+      avgScore: number
+      bestScore: number
+      totalPlayTime: number
+      avgPlayTime: number
+    }[] = []
+
+    allPlayersSet.forEach(player => {
+      const info = playerInfo.get(player)!
+      const stats = playerStats.get(player)
+
+      if (stats) {
+        allPlayersList.push({
+          player,
+          account: info.account,
+          group: info.group,
+          playCount: stats.playCount,
+          clearCount: stats.clearCount,
+          avgScore: Math.round(stats.totalScore / stats.playCount),
+          bestScore: stats.bestScore,
+          totalPlayTime: stats.totalPlayTime,
+          avgPlayTime: Math.round(stats.totalPlayTime / stats.playCount)
+        })
+      } else {
+        // 記録なし
+        allPlayersList.push({
+          player,
+          account: info.account,
+          group: info.group,
+          playCount: 0,
+          clearCount: 0,
+          avgScore: 0,
+          bestScore: 0,
+          totalPlayTime: 0,
+          avgPlayTime: 0
+        })
+      }
+    })
+
+    // Account > Group > Player の入れ子構造に変換
+    const accountMap = new Map<string, Map<string, typeof allPlayersList>>()
+
+    allPlayersList.forEach(playerData => {
+      if (!accountMap.has(playerData.account)) {
+        accountMap.set(playerData.account, new Map())
+      }
+      const groupMap = accountMap.get(playerData.account)!
+
+      if (!groupMap.has(playerData.group)) {
+        groupMap.set(playerData.group, [])
+      }
+      groupMap.get(playerData.group)!.push(playerData)
+    })
+
+    // 結果を構造化
+    const result: {
+      account: string
+      groups: {
+        group: string
+        players: typeof allPlayersList
+      }[]
+    }[] = []
+
+    // アカウント名でソート
+    const sortedAccounts = Array.from(accountMap.keys()).sort()
+
+    sortedAccounts.forEach(account => {
+      const groupMap = accountMap.get(account)!
+      const groups: { group: string; players: typeof allPlayersList }[] = []
+
+      // グループ名でソート
+      const sortedGroups = Array.from(groupMap.keys()).sort()
+
+      sortedGroups.forEach(group => {
+        const players = groupMap.get(group)!
+        // プレイヤー名でソート
+        players.sort((a, b) => a.player.localeCompare(b.player, 'ja'))
+        groups.push({ group, players })
+      })
+
+      result.push({ account, groups })
+    })
+
+    return result
+  }
+
   return {
     allSessions,
     isDataLoaded,
@@ -1370,6 +1555,7 @@ export const useDemoData = () => {
     getFilteredLogData,
     getAllFilteredLogData,
     getFilteredAggregatedStats,
-    getFilteredPersonalRecords
+    getFilteredPersonalRecords,
+    getPlayerStatsForSummaryRow
   }
 }

@@ -74,6 +74,7 @@ const navigationItems = [
   { name: 'ログ', path: '/logs', icon: 'i-lucide-file-text' },
   { name: 'ロープレ構築', path: '/content-creation', icon: 'i-lucide-hammer' },
   { name: 'テストプレイ', path: '/test-play', icon: 'i-lucide-play-circle' },
+  { name: 'システム構造', path: '/structure', icon: 'i-lucide-git-branch' },
 ]
 
 const switchView = (item: typeof navigationItems[0]) => {

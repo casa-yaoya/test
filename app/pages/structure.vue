@@ -1,7 +1,7 @@
 <template>
-  <div class="prompts-page">
+  <div class="structure-page">
     <div class="page-header">
-      <h1 class="page-title">プロンプト管理</h1>
+      <h1 class="page-title">システム構造</h1>
       <p class="page-description">フローをクリックすると処理詳細とプロンプトを表示</p>
     </div>
 
@@ -133,7 +133,7 @@
 
           <div class="flow-arrow">→</div>
 
-          <!-- 題材プロンプト生成 -->
+          <!-- ロープレ構築 -->
           <div class="flow-node flow-node-ai" @click="openPopup('build')">
             <div class="node-header">
               <span class="node-icon">🤖</span>
@@ -141,35 +141,6 @@
               <span class="node-api api-responses">Responses API</span>
             </div>
             <div class="node-desc">ポイント抽出・台本生成</div>
-          </div>
-
-          <div class="flow-arrow">→</div>
-
-          <!-- 4モードのプロンプト生成 -->
-          <div class="flow-branch-vertical">
-            <div class="branch-header">題材プロンプト生成</div>
-            <div class="branch-items-vertical">
-              <div class="flow-node-mini" @click="openPopup('mode-subtitle')">
-                <span class="node-icon-mini">📖</span>
-                <span class="node-label-mini">台本モード用</span>
-                <span class="node-api api-responses">gpt-4.1</span>
-              </div>
-              <div class="flow-node-mini" @click="openPopup('mode-demo')">
-                <span class="node-icon-mini">✨</span>
-                <span class="node-label-mini">お手本モード用</span>
-                <span class="node-api api-responses">gpt-4.1</span>
-              </div>
-              <div class="flow-node-mini" @click="openPopup('mode-confirmation')">
-                <span class="node-icon-mini">✅</span>
-                <span class="node-label-mini">確認モード用</span>
-                <span class="node-api api-responses">gpt-4.1</span>
-              </div>
-              <div class="flow-node-mini" @click="openPopup('mode-practice')">
-                <span class="node-icon-mini">👔</span>
-                <span class="node-label-mini">実践モード用</span>
-                <span class="node-api api-responses">gpt-4.1</span>
-              </div>
-            </div>
           </div>
 
           <div class="flow-arrow">→</div>
@@ -186,65 +157,87 @@
       </div>
     </div>
 
-    <!-- フロー3: プロンプト合成（リアクティブ） -->
+    <!-- フロー3: プロンプト合成（4構成要素） -->
     <div class="flow-section">
       <div class="flow-section-header">
         <span class="flow-section-number">3</span>
-        <span class="flow-section-title">プロンプト合成</span>
-        <span class="flow-section-badge">リアクティブ更新</span>
+        <span class="flow-section-title">プロンプト合成（4構成要素）</span>
+        <span class="flow-section-badge">AI不使用・即時合成</span>
       </div>
       <div class="flow-container">
         <div class="flow-line">
-          <!-- トリガー条件 -->
+          <!-- プロンプト生成ボタン -->
+          <div class="flow-node flow-node-start" @click="openPopup('prompt-gen-start')">
+            <div class="node-header">
+              <span class="node-icon">✨</span>
+              <span class="node-label">プロンプト生成</span>
+            </div>
+            <div class="node-desc">ボタン押下</div>
+          </div>
+
+          <div class="flow-arrow">→</div>
+
+          <!-- 流れ設定ダイアログ -->
+          <div class="flow-node flow-node-question" @click="openPopup('flow-settings')">
+            <div class="node-header">
+              <span class="node-icon">⚙️</span>
+              <span class="node-label">流れ設定</span>
+            </div>
+            <div class="node-desc">話し方・終了条件等</div>
+          </div>
+
+          <div class="flow-arrow">→</div>
+
+          <!-- 4構成要素の合成 -->
           <div class="flow-branch-vertical">
-            <div class="branch-header">トリガー条件</div>
+            <div class="branch-header">4構成要素の合成</div>
             <div class="branch-items-vertical">
-              <div class="flow-node-mini" @click="openPopup('trigger-build')">
+              <div class="flow-node-mini" @click="openPopup('comp-mode-instruction')">
+                <span class="node-icon-mini">①</span>
+                <span class="node-label-mini">モード毎の固定指示</span>
+                <span class="node-api api-lib">固定</span>
+              </div>
+              <div class="flow-node-mini" @click="openPopup('comp-character')">
+                <span class="node-icon-mini">②</span>
+                <span class="node-label-mini">人格設定</span>
+                <span class="node-api api-lib">キャラ</span>
+              </div>
+              <div class="flow-node-mini" @click="openPopup('comp-flow')">
+                <span class="node-icon-mini">③</span>
+                <span class="node-label-mini">流れ設定</span>
+                <span class="node-api api-lib">設定値</span>
+              </div>
+              <div class="flow-node-mini" @click="openPopup('comp-content')">
+                <span class="node-icon-mini">④</span>
+                <span class="node-label-mini">内容設定</span>
+                <span class="node-api api-lib">ポイント等</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-arrow">→</div>
+
+          <!-- 4モード分のプロンプト -->
+          <div class="flow-branch-vertical">
+            <div class="branch-header">4モード分を生成</div>
+            <div class="branch-items-vertical">
+              <div class="flow-node-mini" @click="openPopup('mode-confirmation')">
                 <span class="node-icon-mini">✅</span>
-                <span class="node-label-mini">構築完了時</span>
+                <span class="node-label-mini">確認モード</span>
               </div>
-              <div class="flow-node-mini" @click="openPopup('trigger-mode')">
-                <span class="node-icon-mini">🔄</span>
-                <span class="node-label-mini">モード変更時</span>
+              <div class="flow-node-mini" @click="openPopup('mode-practice')">
+                <span class="node-icon-mini">👔</span>
+                <span class="node-label-mini">実践モード</span>
               </div>
-              <div class="flow-node-mini" @click="openPopup('trigger-character')">
-                <span class="node-icon-mini">👤</span>
-                <span class="node-label-mini">相手変更時</span>
+              <div class="flow-node-mini" @click="openPopup('mode-subtitle')">
+                <span class="node-icon-mini">📖</span>
+                <span class="node-label-mini">台本モード</span>
+              </div>
+              <div class="flow-node-mini" @click="openPopup('mode-demo')">
+                <span class="node-icon-mini">✨</span>
+                <span class="node-label-mini">お手本モード</span>
               </div>
             </div>
-          </div>
-
-          <div class="flow-arrow">→</div>
-
-          <!-- 題材プロンプト取得 -->
-          <div class="flow-node flow-node-data" @click="openPopup('get-subject')">
-            <div class="node-header">
-              <span class="node-icon">📝</span>
-              <span class="node-label">題材プロンプト</span>
-            </div>
-            <div class="node-desc">モードから取得</div>
-          </div>
-
-          <div class="flow-arrow">+</div>
-
-          <!-- 人格プロンプト取得 -->
-          <div class="flow-node flow-node-data" @click="openPopup('get-character')">
-            <div class="node-header">
-              <span class="node-icon">👔</span>
-              <span class="node-label">人格プロンプト</span>
-            </div>
-            <div class="node-desc">キャラから取得</div>
-          </div>
-
-          <div class="flow-arrow">→</div>
-
-          <!-- プロンプト合成 -->
-          <div class="flow-node flow-node-ai" @click="openPopup('prompt-merge')">
-            <div class="node-header">
-              <span class="node-icon">🔗</span>
-              <span class="node-label">合成処理</span>
-            </div>
-            <div class="node-desc">題材＋人格を結合</div>
           </div>
 
           <div class="flow-arrow">→</div>
@@ -253,9 +246,9 @@
           <div class="flow-node flow-node-end" @click="openPopup('prompt-display')">
             <div class="node-header">
               <span class="node-icon">👁️</span>
-              <span class="node-label">プロンプト表示</span>
+              <span class="node-label">出力パネル</span>
             </div>
-            <div class="node-desc">プロンプトエリアに表示</div>
+            <div class="node-desc">合成プロンプト表示</div>
           </div>
         </div>
       </div>
@@ -342,7 +335,7 @@
     <div class="api-legend">
       <span class="legend-title">使用API:</span>
       <span class="legend-item"><span class="node-api api-openai">GPT-4o</span> OpenAI Vision/Whisper (gpt-4o)</span>
-      <span class="legend-item"><span class="node-api api-lib">lib</span> ライブラリ処理（AI不使用）</span>
+      <span class="legend-item"><span class="node-api api-lib">lib</span> ライブラリ/固定処理（AI不使用）</span>
       <span class="legend-item"><span class="node-api api-responses">gpt-4.1</span> Responses API (gpt-4.1)</span>
       <span class="legend-item"><span class="node-api api-realtime">Realtime</span> Realtime API (gpt-4o-realtime-preview)</span>
     </div>
@@ -363,7 +356,7 @@
 
           <div v-if="popupPrompt" class="popup-section">
             <h4 class="popup-section-title">
-              プロンプト
+              プロンプト / テンプレート
               <UButton
                 variant="ghost"
                 size="xs"
@@ -376,6 +369,7 @@
               v-model="popupPrompt"
               class="popup-prompt-textarea"
               :rows="15"
+              readonly
             />
           </div>
 
@@ -387,7 +381,6 @@
       <template #footer>
         <div class="popup-footer">
           <UButton variant="ghost" color="neutral" @click="showPopup = false">閉じる</UButton>
-          <UButton v-if="popupPrompt" color="primary" @click="savePrompt">保存</UButton>
         </div>
       </template>
     </UModal>
@@ -425,16 +418,6 @@ const nodeInfoMap: Record<string, NodeInfo> = {
     description: 'PDFを画像として読み取り、GPT-4oのビジョン機能でテキストを抽出します。図表やレイアウトも理解して構造化されたテキストに変換します。',
     api: 'OpenAI API (GPT-4o Vision)',
     filePath: 'server/api/analyze.post.ts',
-    prompt: `PDFの各ページを画像として処理し、以下の指示に従ってテキストを抽出してください：
-
-1. ページの内容を正確に読み取る
-2. 見出し、本文、リストなどの構造を維持
-3. 図表がある場合は、その内容を説明
-4. 重要なキーワードやポイントを識別
-
-出力形式：
-- ページごとに区切って出力
-- マークダウン形式で構造化`
   },
   'excel': {
     title: 'Excel処理',
@@ -484,190 +467,123 @@ const nodeInfoMap: Record<string, NodeInfo> = {
   },
   'build': {
     title: 'ロープレ構築',
-    description: 'OpenAI Responses APIを使用して、アップロードされたデータとゴールに基づいてロープレを構築します。\n\n処理内容:\n1. ファイル内容から重要ポイントを抽出\n2. ゴールに応じた学習ポイントを整理\n3. 各モード用の台本・プロンプトを生成',
+    description: 'OpenAI Responses APIを使用して、アップロードされたデータとゴールに基づいてロープレを構築します。\n\n処理内容:\n1. ファイル内容から重要ポイントを抽出\n2. ゴールに応じた学習ポイントを整理\n3. 概要・ポイント・台本を生成',
     api: 'OpenAI Responses API (gpt-4.1)',
     filePath: 'server/api/agent/chat.post.ts',
-    prompt: `あなたはロープレ（ロールプレイング）学習コンテンツを作成するアシスタントです。
-
-## 役割
-ユーザーがアップロードしたファイルと選択したゴールに基づいて、効果的なロープレ設計を行います。
-
-## 処理内容
-1. ファイル内容から重要ポイントを抽出
-2. ゴールに応じた学習ポイントを整理
-3. 各モード用の台本・プロンプトを生成
-
-## 出力形式
-- ポイント一覧（Q&A形式）
-- 概要（ロープレの目的と流れ）
-- 各モード用台本`
   },
-  'mode-subtitle': {
-    title: '台本モード',
-    description: 'ユーザーが台本を読み上げ、AIが正しく話せているかチェックします。\n\nお手本の流れを学ぶ学習モードです。間違いがあれば優しく指摘し、再チャレンジを促します。\n\n【使用AIモデル】\n- 題材プロンプト生成: gpt-4.1 (Responses API)\n- ロープレ実行時: gpt-4o-realtime-preview (Realtime API)',
-    api: '題材生成: gpt-4.1 / 実行: Realtime API (gpt-4o-realtime-preview)',
-    filePath: 'app/components/BuildPanel.vue (modeMetaPrompts)',
-    prompt: `【ランタイムプロンプト（実行時にAIに渡されるプロンプト）】
-あなたは台本チェックの先生です。
-
-## あなたの役割
-ユーザーが台本通りに話せているかをチェックします。
-
-## 動作
-- ユーザーの発言を台本と比較
-- 正しく話せていれば次に進む
-- 間違いがあれば優しく指摘して再度チャレンジを促す
-
-## 話し方
-- 優しく励ましながら進行
-- 間違いを恐れさせない雰囲気作り
-- 成功時は具体的に褒める
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-【エージェントプロンプト（プロンプト生成AIに渡すメタプロンプト）】
-あなたは、人間がAIと会話をすることでトレーニングをするためにＡＩに渡すプロンプトを生成する、トレーニング設計のプロでかつ、プロンプト生成のプロです。人間が台本通りに話せるかを確認するために、ＡＩに台本の「お客様」側を演じさせたいです。台本の情報は与えられるのでそのままつかってください。また、生成されるプロンプトを実際に使う時には、末尾に相手キャラクターの設定を「あなたの設定：」として追加して動かします。なので、ＡＩにキャラクター的な情報を入れる必要はありません。`
+  'prompt-gen-start': {
+    title: 'プロンプト生成開始',
+    description: '設計パネルの「プロンプト生成」ボタンを押して、4構成要素の合成を開始します。\n\nAIは使用せず、以下の4要素を即時に合成します：\n①モード毎の固定指示\n②人格設定\n③流れ設定\n④内容設定',
+    filePath: 'app/components/BuildPanel.vue (confirmGeneratePrompts)',
   },
-  'mode-demo': {
-    title: 'お手本モード',
-    description: 'AIが先生役として模範的な営業トークを実演します。\n\nユーザーは顧客役として参加し、プロの対応を学びます。\n\n【使用AIモデル】\n- 題材プロンプト生成: gpt-4.1 (Responses API)\n- ロープレ実行時: gpt-4o-realtime-preview (Realtime API)',
-    api: '題材生成: gpt-4.1 / 実行: Realtime API (gpt-4o-realtime-preview)',
-    filePath: 'app/components/BuildPanel.vue (modeMetaPrompts)',
-    prompt: `【ランタイムプロンプト（実行時にAIに渡されるプロンプト）】
-あなたはお手本を見せる先生です。
+  'flow-settings': {
+    title: '流れ設定ダイアログ',
+    description: 'プロンプト生成前に、会話の流れに関する設定を行います。\n\n設定項目:\n- 相手の話し方（フレンドリー/ていねい/怖い）\n- 終了条件（ターン数上限、終了コール）\n- 不正解時の反応（確認モードのみ）\n\nこれらの設定は③流れ設定としてプロンプトに反映されます。',
+    filePath: 'app/components/BuildPanel.vue (showConfirmDialog)',
+  },
+  'comp-mode-instruction': {
+    title: '①モード毎の固定指示',
+    description: 'モード毎に固定された基本指示文です。\n\nプロンプトの冒頭に挿入され、AIの役割と基本的な振る舞いを定義します。',
+    api: '固定テンプレート（AI不使用）',
+    filePath: 'app/composables/useBasePrompts.ts (MODE_INSTRUCTIONS)',
+    prompt: `【確認モード】
+あなたは先生の役として、相手が理解しているかを確認して。（問）と（正解）の組み合わせのリストを与えるので、これを元に、１つずつ問いかけて。
 
-## あなたの役割
-ユーザーに営業トークのお手本を見せます。ユーザーは顧客役を演じます。
+【実践モード】
+あなたはお客様を演じ、以下に示す役割を演じて。話し相手は、内容の文脈によって変わるが、営業マンや、接客スタッフなどである。
 
-## 動作
-- プロとしての模範的な対応を見せる
-- 質問の仕方、提案の仕方のお手本を実演
-- ユーザー（顧客役）の反応に柔軟に対応
+【台本モード】
+あなたはお客様として、相手の会話相手をして。ただし、あなたの発言は全て、下記に示される台本の通り、一語一句同じ内容を話して。相手の発言が、台本通りでなかったとしても、無視して自分のターンでは自分の発言を台本通りにして。
 
-## 話し方
-- プロフェッショナルで丁寧
-- 自然な会話の流れを重視
-- 学習ポイントが伝わるように意識
+【お手本モード】
+あなたは優秀なスタッフとして、以下に指示される内容を解釈し、お客様相手に会話して。`
+  },
+  'comp-character': {
+    title: '②人格設定',
+    description: 'キャラクター選択に紐づく、AIの人格設定です。\n\n「あなたの設定：」として追加されます。\n\n含まれる情報:\n- 名前\n- 年齢\n- 属性（職業・役職等）\n- 性格\n- 口癖',
+    api: 'キャラクターデータ（AI不使用）',
+    filePath: 'app/components/BuildPanel.vue (characters)',
+    prompt: `あなたの設定：
+- 名前: 高橋 明
+- 年齢: 35歳
+- 属性: IT企業 プロジェクトマネージャー
+- 性格: 論理的で冷静、効率を重視する
+- 口癖: 「具体的な数字で説明してください」`
+  },
+  'comp-flow': {
+    title: '③流れ設定',
+    description: 'プロンプト生成ダイアログで設定された内容から生成されます。\n\n【話し方】\n・フレンドリー: タメ口だが優しい話し方\n・ていねい: 敬語で優しい、間違えても励ます\n・怖い: タメ口で厳しく、命令口調\n\n【終了条件】\n・ターン数上限\n・終了コール\n\n【確認モードのみ】\n・不正解時の反応（正解を教える/ヒント/ヒントなし/触れない）',
+    api: '設定値から生成（AI不使用）',
+    filePath: 'app/composables/useBasePrompts.ts (generateFlowSettingsPrompt)',
+    prompt: `◆話し方◆
+端的に、伝えるべき内容を短く最低限で伝える。
+敬語で、優しい話し方。間違えても励ましてくれる。
+ただし、同じ内容の発言は繰り返さない。
+問いは、書かれている内容をそのまま使うこと。
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+◆終了条件◆
+会話は10ターンを上限として終了して。
+プレイヤーまたはあなたが「会話終了」などの終了コールをした場合は、その時点で会話を終了して。
 
-【エージェントプロンプト（プロンプト生成AIに渡すメタプロンプト）】
-あなたは、人間がAIと会話をすることでトレーニングをするためにＡＩに渡すプロンプトを生成する、トレーニング設計のプロでかつ、プロンプト生成のプロです。人間にお手本を見せるＡＩをつくりたいです。ポイントや台本（今回の文脈では、人間側がお客様側を体験することになる）の情報は与えられるのでそのままつかってください。また、生成されるプロンプトを実際に使う時には、末尾に相手キャラクターの設定を「あなたの設定：」として追加して動かします。なので、ＡＩにキャラクター的な情報を入れる必要はありません。`
+◆進行フロー◆（確認モードのみ）
+（１）問いかけを行う。
+（２）回答に対し、以下の分岐でフィードバックする。
+・正解であると判定→正解！と言った後、一言だけフィードバックをして、次の問へ。
+・不足や誤りがあり、正解でないと判定→不足や誤りがある部分を指摘し、正解を教え、次の問へ。
+・相手がまじめに回答していない、何もいっていない等と判定→もう一度いうね、といって、問を繰り返す。
+（３）全ての問が終わったら、会話終了。`
+  },
+  'comp-content': {
+    title: '④内容設定',
+    description: '設計パネルのポイント・台本・概要から構築されます。\n\n【シチュエーション】\n概要テキスト\n\n【問いかけリスト】（確認モード）\n問と正解のペア\n\n【台本】（台本モード）\n発話者と台詞のリスト\n\n【押さえるべきポイント】（実践/お手本モード）\nポイントと回答のリスト',
+    api: '設計パネルデータから生成（AI不使用）',
+    filePath: 'app/pages/content-creation.vue (generateSinglePrompt)',
+    prompt: `【シチュエーション】
+お客様は保険の見直しを検討している40代の会社員です。現在加入している保険の内容に不安を感じており、専門家のアドバイスを求めています。
+
+【問いかけリスト】
+1. （問）保険の見直しで最も重要なことは何ですか？
+   （正解）現在のライフステージと将来の計画に合わせた保障内容の確認
+   （ポイント）家族構成や収入の変化を考慮する
+
+2. （問）保険料を抑えるにはどうすればよいですか？
+   （正解）不要な特約の見直しと、保障の重複がないかチェックする
+   （ポイント）他の保険や社会保障との重複を確認`
   },
   'mode-confirmation': {
     title: '確認モード',
-    description: 'AIがQ&A形式でユーザーの理解度を確認します。\n\nポイントごとに質問を投げかけ、理解が不足している部分を補足説明します。\n\n【使用AIモデル】\n- 題材プロンプト生成: gpt-4.1 (Responses API)\n- ロープレ実行時: gpt-4o-realtime-preview (Realtime API)',
-    api: '題材生成: gpt-4.1 / 実行: Realtime API (gpt-4o-realtime-preview)',
-    filePath: 'app/components/BuildPanel.vue (modeMetaPrompts)',
-    prompt: `【ランタイムプロンプト（実行時にAIに渡されるプロンプト）】
-あなたは理解度を確認する先生です。
-
-## あなたの役割
-Q&A形式でユーザーの理解度を確認します。
-
-## 動作
-- ポイントに基づいた質問を投げかける
-- ユーザーの回答を評価
-- 不足があれば補足説明
-
-## 話し方
-- 質問は明確に
-- 回答への反応は具体的に
-- 間違いも学びの機会として前向きに扱う
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-【エージェントプロンプト（プロンプト生成AIに渡すメタプロンプト）】
-あなたは、人間がAIと会話をすることでトレーニングをするためにＡＩに渡すプロンプトを生成する、トレーニング設計のプロでかつ、プロンプト生成のプロです。人間がポイントを抑えているか確認する先生のＡＩをつくりたいです。確認するポイントの情報は与えられるのでそのままつかってください。また、生成されるプロンプトを実際に使う時には、末尾に相手キャラクターの設定を「あなたの設定：」として追加して動かします。なので、ＡＩにキャラクター的な情報を入れる必要はありません。`
+    description: 'AIがQ&A形式でユーザーの理解度を確認します。\n\nポイントごとに質問を投げかけ、理解が不足している部分を補足説明します。\n\n【プロンプト構成】\n①モード固定指示（確認モード用）\n②人格設定（選択キャラクター）\n③流れ設定（不正解時の反応を含む）\n④内容設定（問いかけリスト）',
+    filePath: 'app/composables/useBasePrompts.ts',
   },
   'mode-practice': {
     title: '実践モード',
-    description: 'AIが難しい顧客役として振る舞い、ユーザーの対応力を試します。\n\nリアルな営業シーンを想定した実践的なトレーニングです。\n\n【使用AIモデル】\n- 題材プロンプト生成: gpt-4.1 (Responses API)\n- ロープレ実行時: gpt-4o-realtime-preview (Realtime API)',
-    api: '題材生成: gpt-4.1 / 実行: Realtime API (gpt-4o-realtime-preview)',
-    filePath: 'app/components/BuildPanel.vue (modeMetaPrompts)',
-    prompt: `【ランタイムプロンプト（実行時にAIに渡されるプロンプト）】
-ロープレをしたいので、あなたはお客さん役として、以下に示す設定の役を演じてください。
-
-## 話し方
-- 敬語だが、少し高圧的な口調。淡々と話す
-- 質問に回答する時は、単語や情報だけでなく、話し言葉で「かなぁ」等と話す
-- 質問された事以外は答えないが、質問に附随する内容は教える
-- 一回の発言は30文字以内で、簡潔に短く答える
-
-### 口癖（毎回使うわけではない）
-- うーん、
-- まあ、
-- ○○かなぁ。
-- そうだねえ。
-- いやー
-
-## ロープレのクリア条件
-相手はあなたに対してヒアリングの質問をします。
-（最重要の目標）と（最重要の課題）の内容を全てヒアリングできていれば、ロープレクリアとして判定し、成功ステートに移ってください。
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-【エージェントプロンプト（プロンプト生成AIに渡すメタプロンプト）】
-あなたは、人間がAIと会話をすることでトレーニングをするためにＡＩに渡すプロンプトを生成する、トレーニング設計のプロでかつ、プロンプト生成のプロです。人間がポイント押さえてしっかり話せるかを確認するために、ＡＩに「お客様」側を演じさせたいです。ポイントと台本の情報は与えられるので、これを参考に、ＡＩに与えるプロンプトを生成してください。生成されるプロンプトを実際に使う時には、末尾に相手キャラクターの設定を「あなたの設定：」として追加して動かします。なので、ＡＩにキャラクター的な情報を入れる必要はありません。`
+    description: 'AIが顧客役として振る舞い、ユーザーの対応力を試します。\n\nリアルな営業シーンを想定した実践的なトレーニングです。\n\n【プロンプト構成】\n①モード固定指示（実践モード用）\n②人格設定（選択キャラクター）\n③流れ設定（話し方・終了条件）\n④内容設定（押さえるべきポイント）',
+    filePath: 'app/composables/useBasePrompts.ts',
   },
-  'trigger-build': {
-    title: '構築完了時トリガー',
-    description: 'ロープレ構築が完了したタイミングで、プロンプト合成が自動実行されます。\n\n【発火タイミング】\n- 4モードすべてのプロンプト生成が完了した時\n- systemPromptsDisplayに値がセットされた時\n\nこのタイミングで初めて合成プロンプトが生成され、プロンプトエリアに表示されます。',
-    filePath: 'app/pages/content-creation.vue (watch: systemPromptsDisplay)',
+  'mode-subtitle': {
+    title: '台本モード',
+    description: 'ユーザーが台本を読み上げ、AIが正しく話せているかチェックします。\n\nお手本の流れを学ぶ学習モードです。\n\n【プロンプト構成】\n①モード固定指示（台本モード用）\n②人格設定（選択キャラクター）\n③流れ設定（話し方・終了条件）\n④内容設定（台本）',
+    filePath: 'app/composables/useBasePrompts.ts',
   },
-  'trigger-mode': {
-    title: 'モード変更時トリガー',
-    description: 'モード（台本/お手本/確認/実践）を変更すると、プロンプト合成が自動で再実行されます。\n\n【発火タイミング】\n- selectedModeが変更された時\n\n変更後のモードに対応する題材プロンプトを取得し、現在選択中のキャラクターの人格プロンプトと合成します。',
-    filePath: 'app/pages/content-creation.vue (watch: selectedMode)',
-  },
-  'trigger-character': {
-    title: '相手変更時トリガー',
-    description: '相手（キャラクター）を変更すると、プロンプト合成が自動で再実行されます。\n\n【発火タイミング】\n- selectedCharacterが変更された時\n\n変更後のキャラクターの人格プロンプトを取得し、現在選択中のモードの題材プロンプトと合成します。',
-    filePath: 'app/pages/content-creation.vue (watch: selectedCharacter)',
-  },
-  'get-subject': {
-    title: '題材プロンプト取得',
-    description: '選択されているモードから題材プロンプトを取得します。\n\n【データソース】\n- systemPromptsDisplay[selectedMode]\n\n各モードには構築時に生成された専用の題材プロンプトが保存されています。',
-    filePath: 'app/pages/content-creation.vue (getInstructionsForMode)',
-  },
-  'get-character': {
-    title: '人格プロンプト取得',
-    description: '選択されているキャラクターから人格プロンプトを取得します。\n\n【データソース】\n- selectedCharacterInfo.value\n\n人格情報には名前、年齢、属性、性格、口癖などが含まれます。',
-    filePath: 'app/pages/content-creation.vue (selectedCharacterInfo)',
+  'mode-demo': {
+    title: 'お手本モード',
+    description: 'AIが先生役として模範的な営業トークを実演します。\n\nユーザーは顧客役として参加し、プロの対応を学びます。\n\n【プロンプト構成】\n①モード固定指示（お手本モード用）\n②人格設定（選択キャラクター）\n③流れ設定（話し方・終了条件）\n④内容設定（押さえるべきポイント）',
+    filePath: 'app/composables/useBasePrompts.ts',
   },
   'prompt-display': {
-    title: 'プロンプト表示',
-    description: '合成されたプロンプトをプロンプトエリアに表示します。\n\n【表示内容】\n- 題材プロンプト（上部）\n- 人格プロンプト（末尾に「あなたの設定：」として追加）\n\nユーザーはここで最終的なプロンプトを確認・編集できます。',
+    title: '出力パネル（合成プロンプト表示）',
+    description: '合成されたプロンプトを出力パネルに表示します。\n\n【表示内容】\n4つの構成要素が合成された最終プロンプト：\n①モード毎の固定指示\n②人格設定\n③流れ設定\n④内容設定\n\nユーザーはここで最終的なプロンプトを確認・コピーできます。',
     filePath: 'app/pages/content-creation.vue (mergedPrompt)',
   },
   'use-merged': {
     title: '合成済みプロンプト使用',
-    description: 'ロープレ開始時に、事前に合成済みのプロンプトを使用します。\n\n【動作】\n- プロンプトエリアに表示されている合成プロンプトをそのまま使用\n- Realtime APIへのinstructions設定に渡される\n\nスタート時に新たな処理は不要で、即座にロープレを開始できます。',
+    description: 'ロープレ開始時に、事前に合成済みのプロンプトを使用します。\n\n【動作】\n- 出力パネルに表示されている合成プロンプトをそのまま使用\n- Realtime APIへのinstructions設定に渡される\n\nスタート時に新たな処理は不要で、即座にロープレを開始できます。',
     filePath: 'app/pages/content-creation.vue (toggleRoleplay)',
   },
   'play-start': {
     title: 'ロープレ開始',
     description: 'スタートボタンを押してロープレを開始します。\n\n事前に合成済みのプロンプトを使用してRealtime APIとの接続を開始します。',
     filePath: 'app/pages/content-creation.vue (toggleRoleplay)',
-  },
-  'prompt-merge': {
-    title: 'プロンプト合成',
-    description: 'モードの題材プロンプトとキャラクターの人格プロンプトを結合し、最終的な実行用プロンプトを生成します。\n\n【合成ルール】\n1. 選択されたモードの「題材プロンプト」を取得\n2. 選択されたキャラクターの「人格プロンプト」を取得\n3. 題材プロンプトの末尾に「あなたの設定：」として人格情報を追加\n\n合成されたプロンプトはプロンプトエリアに表示されます。',
-    filePath: 'app/pages/content-creation.vue (getInstructionsForMode)',
-    prompt: `【プロンプト合成の流れ】
-
-1. 題材プロンプト（モードから取得）
-   - 例：「あなたは台本チェックの先生です...」
-
-2. 人格プロンプト（キャラクターから取得）
-   - 例：「あなたの設定：
-     - 名前: 田中太郎
-     - 年齢: 35歳
-     - 属性: 営業部長
-     - 性格: 厳しいが面倒見が良い
-     - 口癖: 「結論から言うと...」」
-
-3. 最終プロンプト = 題材プロンプト + 人格プロンプト`
   },
   'realtime': {
     title: '音声会話',
@@ -680,20 +596,6 @@ Q&A形式でユーザーの理解度を確認します。
     description: '会話ログを分析し、100点満点で採点・評価を行います。\n\n各ポイントについて正答率を計算し、具体的な改善アドバイスを提供します。',
     api: 'OpenAI Responses API (gpt-4.1)',
     filePath: 'prompts/evaluation/feedback.md',
-    prompt: `あなたはロープレ学習の評価を行う専門家です。
-
-## あなたの役割
-「あなた」（学習者）が以下のリストの問に対して、正解をヒントをもらわずに答えられているかで採点してください。
-
-## 採点ルール
-- 正解やヒントを相手からもらっているケースも多くありますが、この場合は減点または０点としてください
-- 各問に対して採点を行い、全体で100点満点で整数値で採点してください
-
-## 採点基準
-- 各ポイントについて、自力で正解できている場合：満点
-- 部分的に正解だが不足がある場合：50〜80%の点数
-- ヒントをもらって答えた場合：20〜40%の点数
-- 全く答えられなかった、または誤答の場合：0点`
   },
   'result': {
     title: '結果表示',
@@ -719,7 +621,7 @@ const getApiColor = (api: string) => {
   if (api.includes('Responses')) return 'success'
   if (api.includes('OpenAI')) return 'success'
   if (api.includes('Claude')) return 'orange'
-  if (api.includes('ライブラリ')) return 'neutral'
+  if (api.includes('ライブラリ') || api.includes('固定') || api.includes('キャラクター') || api.includes('設定値') || api.includes('設計パネル')) return 'neutral'
   return 'neutral'
 }
 
@@ -728,16 +630,10 @@ const copyPrompt = async () => {
     await navigator.clipboard.writeText(popupPrompt.value)
   }
 }
-
-const savePrompt = async () => {
-  // TODO: サーバーにプロンプトを保存
-  console.log('Saving prompt for:', currentNodeId.value, popupPrompt.value)
-  showPopup.value = false
-}
 </script>
 
 <style scoped>
-.prompts-page {
+.structure-page {
   padding: 24px;
   max-width: 100%;
   display: flex;
@@ -945,10 +841,6 @@ const savePrompt = async () => {
   border-color: #cbd5e1;
 }
 
-.flow-node-mini.flow-node-mode {
-  border-left: 3px solid #3b82f6;
-}
-
 .node-icon-mini {
   font-size: 14px;
   flex-shrink: 0;
@@ -959,12 +851,6 @@ const savePrompt = async () => {
   font-weight: 600;
   color: #374151;
   flex-shrink: 0;
-}
-
-.node-desc-mini {
-  font-size: 10px;
-  color: #9ca3af;
-  margin-left: auto;
 }
 
 /* APIバッジ */
@@ -1091,7 +977,7 @@ const savePrompt = async () => {
 
 /* レスポンシブ */
 @media (max-width: 768px) {
-  .prompts-page {
+  .structure-page {
     padding: 16px;
   }
 

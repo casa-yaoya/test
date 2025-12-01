@@ -1037,8 +1037,8 @@ const editCurrentPrompt = () => {
   }
 }
 
-// 評価軸データから評価プロンプトを生成
-const generateEvaluationPromptFromCriteria = (modeKey: string): string => {
+// 評価軸データから評価プロンプトを生成（固定文 + 評価軸タブ内容のシンプル合算）
+const generateEvaluationPromptFromCriteria = (_modeKey: string): string => {
   const criteria = buildPanelRef.value?.evaluationCriteria || []
 
   // チェックが入っている項目のみを抽出
@@ -1061,34 +1061,13 @@ const generateEvaluationPromptFromCriteria = (modeKey: string): string => {
     return ''
   }
 
-  // モード別の評価基準テンプレート
-  const modeInstructions: Record<string, string> = {
-    'subtitle': `【台本モードの評価基準】
-ユーザーが台本通りに発話できているかを評価してください。
-- 台本との一致度を重視
-- 言い回しの正確さを確認`,
-    'ai-demo': `【お手本モードの評価基準】
-AIのお手本を参考にしたユーザーの理解度を評価してください。
-- お手本の要点を理解しているか
-- 応用できているか`,
-    'confirmation': `【確認モードの評価基準】
-一問一答形式でのユーザーの回答を評価してください。
-- 回答の正確さ
-- 要点を押さえているか`,
-    'practice': `【実践モードの評価基準】
-本番を想定した実践的なやり取りを総合的に評価してください。
-- 自然な会話の流れ
-- 臨機応変な対応力`
-  }
+  // 固定文
+  let prompt = `以下の評価基準を元に、各基準で100点満点で評価を行い、総合点も100点満点で出してください。全ての点数は整数値で出してください。
 
-  let prompt = `あなたは営業ロールプレイの評価者です。
-以下の評価軸に基づいて、ユーザーの対話を評価してスコアとフィードバックを提供してください。
-
-${modeInstructions[modeKey] || modeInstructions['practice']}
-
-【評価軸】
+【評価基準】
 `
 
+  // 評価軸タブの内容をそのまま追加
   for (const cat of enabledCriteria) {
     prompt += `\n■ ${cat.category}\n`
     for (const item of cat.items) {
@@ -1118,48 +1097,12 @@ ${modeInstructions[modeKey] || modeInstructions['practice']}
   return prompt
 }
 
-// 対話プロンプトを生成（内容プロンプト + キャラクター設定）
+// 対話プロンプトを取得（systemPromptsDisplayの4層合成済みプロンプトをそのまま使用）
 const generateDialoguePromptContent = (modeKey: string): string => {
+  // systemPromptsDisplayには既に4層合成済みのプロンプトが入っている
+  // ①モード毎の固定指示 ＋ ②人格設定 ＋ ③流れ設定 ＋ ④内容設定
   const contentPromptData = systemPromptsDisplay.value.find(p => p.modeKey === modeKey)
-  const character = selectedCharacterInfo.value
-
-  let content = contentPromptData?.content || ''
-
-  // キャラクター設定を追加
-  if (character) {
-    content += `
-
-あなたの設定：
-- 名前: ${character.name}
-- 年齢: ${character.age}歳
-- 属性: ${character.attribute}
-- 性格: ${character.personality}
-- 口癖: ${character.catchphrase}`
-  }
-
-  // モード別の対話指示を追加
-  const modeDialogueInstructions: Record<string, string> = {
-    'subtitle': `
-
-【台本モード】
-台本に沿って会話を進めてください。ユーザーが台本通りに発話できるようサポートします。`,
-    'ai-demo': `
-
-【お手本モード】
-AIがお手本として理想的な営業トークを実演します。ユーザーは聞いて学習してください。`,
-    'confirmation': `
-
-【確認モード】
-一問一答形式で、ユーザーの理解度を確認します。質問に対して回答を求めてください。`,
-    'practice': `
-
-【実践モード】
-本番さながらの実践的なロールプレイを行います。自然な会話の流れを重視してください。`
-  }
-
-  content += modeDialogueInstructions[modeKey] || ''
-
-  return content
+  return contentPromptData?.content || ''
 }
 
 // すべてのモードの出力パネル用プロンプトを生成
@@ -1538,9 +1481,22 @@ watch(systemPromptsDisplay, () => {
   generateOutputPanelPrompts()
 }, { deep: true })
 
-// 選択キャラクターが変更されたら対話プロンプトを更新
+// 全モードのプロンプトを再生成（キャラクター変更時などに使用）
+const regenerateAllModePrompts = () => {
+  // 既にsystemPromptsDisplayに登録されているモードのみ再生成
+  for (let index = 0; index < systemPromptsDisplay.value.length; index++) {
+    const prompt = systemPromptsDisplay.value[index]
+    if (prompt && prompt.content) {
+      // 内容がある場合のみ再生成
+      generateSinglePrompt(prompt.modeKey, index)
+    }
+  }
+}
+
+// 選択キャラクターが変更されたら全モードの対話プロンプトを再生成
 watch(selectedCharacter, () => {
-  generateOutputPanelPrompts()
+  // キャラクター設定が変わったので、systemPromptsDisplayの全モードを再生成
+  regenerateAllModePrompts()
 })
 
 // Update character animation based on speaking state
@@ -1697,15 +1653,13 @@ const generateSinglePrompt = (modeKey: string, index: number) => {
   // ③流れ設定
   const flowSettings = getSettingsPrompt(modeKey, defaultSettings)
 
-  // ④内容設定
+  // ④内容設定（モード別に設計パネルの情報をそのまま渡す）
   let contentSettings = ''
-  if (buildOverview.value) {
-    contentSettings += `【シチュエーション】\n${buildOverview.value}\n\n`
-  }
 
   if (modeKey === 'confirmation') {
+    // 確認モード: ◆内容 + ポイント
     if (buildPoints.value.length > 0) {
-      contentSettings += `【問いかけリスト】\n`
+      contentSettings += `◆内容\n`
       buildPoints.value.forEach((p: { question: string; point: string; correctAnswer: string }, i: number) => {
         contentSettings += `${i + 1}. （問）${p.question}\n   （正解）${p.correctAnswer}\n`
         if (p.point) {
@@ -1714,23 +1668,26 @@ const generateSinglePrompt = (modeKey: string, index: number) => {
       })
     }
   } else if (modeKey === 'subtitle') {
+    // 台本モード: ◆台本 + 台本内容
     if (buildScriptLines.value.length > 0) {
-      contentSettings += `【台本】\n`
+      contentSettings += `◆台本\n`
       buildScriptLines.value.forEach((line: { speaker: string; text: string }) => {
         const speaker = line.speaker === 'self' ? 'あなた' : (line.speaker === 'narrator' ? 'ナレーター' : 'お客様')
         contentSettings += `${speaker}：${line.text}\n`
       })
     }
-  } else if (modeKey === 'practice' || modeKey === 'ai-demo') {
-    if (buildPoints.value.length > 0) {
-      contentSettings += `【押さえるべきポイント】\n`
-      buildPoints.value.forEach((p: { question: string; point: string; correctAnswer: string }, i: number) => {
-        contentSettings += `${i + 1}. ${p.question}\n`
-        if (p.correctAnswer) {
-          contentSettings += `   → ${p.correctAnswer}\n`
-        }
+  } else if (modeKey === 'ai-demo') {
+    // お手本モード: ◆台本 + 台本内容
+    if (buildScriptLines.value.length > 0) {
+      contentSettings += `◆台本\n`
+      buildScriptLines.value.forEach((line: { speaker: string; text: string }) => {
+        const speaker = line.speaker === 'self' ? 'あなた' : (line.speaker === 'narrator' ? 'ナレーター' : 'お客様')
+        contentSettings += `${speaker}：${line.text}\n`
       })
     }
+  } else if (modeKey === 'practice') {
+    // 実践モード: なし（将来的に設定）
+    // contentSettings は空のまま
   }
 
   // 合成
@@ -1830,19 +1787,14 @@ const handleGenerateSinglePrompt = (modeKey: string, modeLabel: string, _metaPro
   // ③流れ設定（話し方、終了条件など）
   const flowSettings = getSettingsPrompt(modeKey, settings)
 
-  // ④内容設定（ポイント・台本・概要から構築）
+  // ④内容設定（モード別に設計パネルの情報をそのまま渡す）
   let contentSettings = ''
-
-  // 概要を追加
-  if (buildOverview.value) {
-    contentSettings += `【シチュエーション】\n${buildOverview.value}\n\n`
-  }
 
   // モード別の内容を構築
   if (modeKey === 'confirmation') {
-    // 確認モード: ポイントを一問一答形式で
+    // 確認モード: ◆内容 + ポイント
     if (buildPoints.value.length > 0) {
-      contentSettings += `【問いかけリスト】\n`
+      contentSettings += `◆内容\n`
       buildPoints.value.forEach((p, i) => {
         contentSettings += `${i + 1}. （問）${p.question}\n   （正解）${p.correctAnswer}\n`
         if (p.point) {
@@ -1851,25 +1803,26 @@ const handleGenerateSinglePrompt = (modeKey: string, modeLabel: string, _metaPro
       })
     }
   } else if (modeKey === 'subtitle') {
-    // 台本モード: 台本を追加
+    // 台本モード: ◆台本 + 台本内容
     if (buildScriptLines.value.length > 0) {
-      contentSettings += `【台本】\n`
+      contentSettings += `◆台本\n`
       buildScriptLines.value.forEach((line: { speaker: string; text: string }) => {
         const speaker = line.speaker === 'self' ? 'あなた' : (line.speaker === 'narrator' ? 'ナレーター' : 'お客様')
         contentSettings += `${speaker}：${line.text}\n`
       })
     }
-  } else if (modeKey === 'practice' || modeKey === 'ai-demo') {
-    // 実践モード・お手本モード: ポイントを参考情報として追加
-    if (buildPoints.value.length > 0) {
-      contentSettings += `【押さえるべきポイント】\n`
-      buildPoints.value.forEach((p, i) => {
-        contentSettings += `${i + 1}. ${p.question}\n`
-        if (p.correctAnswer) {
-          contentSettings += `   → ${p.correctAnswer}\n`
-        }
+  } else if (modeKey === 'ai-demo') {
+    // お手本モード: ◆台本 + 台本内容
+    if (buildScriptLines.value.length > 0) {
+      contentSettings += `◆台本\n`
+      buildScriptLines.value.forEach((line: { speaker: string; text: string }) => {
+        const speaker = line.speaker === 'self' ? 'あなた' : (line.speaker === 'narrator' ? 'ナレーター' : 'お客様')
+        contentSettings += `${speaker}：${line.text}\n`
       })
     }
+  } else if (modeKey === 'practice') {
+    // 実践モード: なし（将来的に設定）
+    // contentSettings は空のまま
   }
 
   // 合成: ①モード毎の固定指示 ＋ ②人格設定 ＋ ③流れ設定 ＋ ④内容設定
